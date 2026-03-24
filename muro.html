@@ -11,6 +11,11 @@
             margin: 0;
             padding: 20px;
         }
+        /* Contenedores centrales para que no se vea estirado en PC */
+        .contenedor-principal {
+            max-width: 600px;
+            margin: 0 auto;
+        }
         .navbar {
             background-color: white;
             padding: 15px 20px;
@@ -40,6 +45,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         textarea {
             width: 100%;
@@ -60,26 +66,53 @@
             cursor: pointer;
             margin-top: 10px;
         }
+        .btn-publicar:hover { background-color: #166fe5; }
+        
+        /* Estilos para las publicaciones de los amigos */
+        .post {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        .post-autor {
+            font-weight: bold;
+            color: #1c1e21;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .post-texto {
+            color: #050505;
+            font-size: 16px;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <h1>Wueychat</h1>
-        <div>
-            <span id="correo-usuario" style="margin-right: 15px; color: #606770;">Cargando...</span>
-            <button id="btn-salir" class="btn-salir">Cerrar sesión</button>
+    <div class="contenedor-principal">
+        <div class="navbar">
+            <h1>Wueychat</h1>
+            <div>
+                <span id="correo-usuario" style="margin-right: 15px; color: #606770;">Cargando...</span>
+                <button id="btn-salir" class="btn-salir">Salir</button>
+            </div>
         </div>
-    </div>
 
-    <div class="contenedor-publicacion">
-        <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
-        <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
+        <div class="contenedor-publicacion">
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
+            <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
+        </div>
+
+        <div id="feed"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        // Importamos las herramientas de la Base de Datos (Firestore)
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
@@ -93,26 +126,75 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app); // Encendemos la conexión a la base de datos
 
-        // Seguridad: Vigilar si el usuario tiene permiso de estar aquí
+        let usuarioActual = null;
+
+        // Verificar quién entró
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // El usuario está conectado, mostramos su correo
+                usuarioActual = user;
                 document.getElementById("correo-usuario").innerText = user.email;
+                cargarPublicaciones(); // Llamamos a la función que lee el muro
             } else {
-                // ¡Intruso! No ha iniciado sesión, lo regresamos al inicio
                 window.location.href = "index.html";
             }
         });
 
-        // Función para cerrar sesión
         document.getElementById("btn-salir").addEventListener("click", () => {
             signOut(auth).then(() => {
                 window.location.href = "index.html";
-            }).catch((error) => {
-                console.error("Error al salir:", error);
             });
         });
+
+        // 1. GUARDAR LA PUBLICACIÓN
+        const btnPublicar = document.getElementById("btn-publicar");
+        const inputTexto = document.getElementById("texto-publicacion");
+
+        btnPublicar.addEventListener("click", async () => {
+            const texto = inputTexto.value.trim();
+            if (texto === "") return; // Si está vacío, no hace nada
+
+            try {
+                // Le decimos a Firebase: Agrega un documento en la colección "publicaciones"
+                await addDoc(collection(db, "publicaciones"), {
+                    autor: usuarioActual.email,
+                    texto: texto,
+                    fecha: serverTimestamp() // Hora exacta para saber cuál va primero
+                });
+                inputTexto.value = ""; // Limpiamos la caja para que puedan escribir otro
+            } catch (error) {
+                console.error("Error al publicar:", error);
+                alert("Hubo un error. Revisa que las reglas de Firebase estén bien guardadas.");
+            }
+        });
+
+        // 2. LEER LAS PUBLICACIONES (EN TIEMPO REAL)
+        function cargarPublicaciones() {
+            const feedDiv = document.getElementById("feed");
+            // Ordenamos: de la fecha más nueva a la más vieja
+            const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
+
+            // onSnapshot se queda escuchando 24/7 si hay mensajes nuevos
+            onSnapshot(q, (snapshot) => {
+                feedDiv.innerHTML = ""; // Limpiamos la pantalla para no duplicar
+                
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
+                    
+                    // Solo mostramos posts que ya tienen fecha registrada
+                    if (post.fecha) {
+                        const cajaPost = document.createElement("div");
+                        cajaPost.classList.add("post");
+                        cajaPost.innerHTML = `
+                            <div class="post-autor">${post.autor}</div>
+                            <div class="post-texto">${post.texto}</div>
+                        `;
+                        feedDiv.appendChild(cajaPost);
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
