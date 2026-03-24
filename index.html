@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wueychat - Inicio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .contenedor {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 320px;
+        }
+        h1 {
+            color: #1877f2;
+            margin-bottom: 5px;
+            font-size: 36px;
+        }
+        p.subtitulo {
+            color: #606770;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background-color: #1877f2; /* Azul Facebook */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-login:hover { background-color: #166fe5; }
+        
+        .linea-separadora {
+            border-bottom: 1px solid #dadde1;
+            margin: 20px 0;
+        }
+
+        .btn-registro {
+            padding: 12px 20px;
+            background-color: #42b72a; /* Verde */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-registro:hover { background-color: #36a420; }
+
+        #mensaje {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor">
+        <h1>Wueychat</h1>
+        <p class="subtitulo">Conéctate con tus amigos.</p>
+        
+        <input type="email" id="email" placeholder="Correo electrónico" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        
+        <button id="btn-login" class="btn-login">Iniciar sesión</button>
+        
+        <p id="mensaje"></p>
+
+        <div class="linea-separadora"></div>
+
+        <button id="btn-registrar" class="btn-registro">Crear cuenta nueva</button>
+    </div>
+
+    <script type="module">
+        // 1. Importar Firebase y las DOS funciones (Registro e Inicio de sesión)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        // 2. Tu configuración de Wueychat
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
+            authDomain: "wueychat.firebaseapp.com",
+            projectId: "wueychat",
+            storageBucket: "wueychat.firebasestorage.app",
+            messagingSenderId: "889745387297",
+            appId: "1:889745387297:web:1b8343a328d854fc99d860",
+            measurementId: "G-LKQ86ZXTRK"
+        };
+
+        // 3. Encender Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Referencias a los botones y campos
+        const btnLogin = document.getElementById("btn-login");
+        const btnRegistrar = document.getElementById("btn-registrar");
+        const mensajeDiv = document.getElementById("mensaje");
+        const inputEmail = document.getElementById("email");
+        const inputPassword = document.getElementById("password");
+
+        // --- FUNCIÓN PARA REGISTRAR ---
+        btnRegistrar.addEventListener("click", () => {
+            const email = inputEmail.value;
+            const password = inputPassword.value;
+
+            if(!email || !password) {
+                mensajeDiv.style.color = "red";
+                mensajeDiv.innerText = "Llena los campos para registrarte.";
+                return;
+            }
+
+            mensajeDiv.style.color = "#1877f2";
+            mensajeDiv.innerText = "Creando cuenta...";
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    mensajeDiv.style.color = "green";
+                    mensajeDiv.innerText = "¡Cuenta creada! Ya puedes iniciar sesión.";
+                })
+                .catch((error) => {
+                    mensajeDiv.style.color = "red";
+                    mensajeDiv.innerText = "Error al crear cuenta: " + error.message;
+                });
+        });
+
+        // --- FUNCIÓN PARA INICIAR SESIÓN ---
+        btnLogin.addEventListener("click", () => {
+            const email = inputEmail.value;
+            const password = inputPassword.value;
+
+            if(!email || !password) {
+                mensajeDiv.style.color = "red";
+                mensajeDiv.innerText = "Ingresa tu correo y contraseña.";
+                return;
+            }
+
+            mensajeDiv.style.color = "#1877f2";
+            mensajeDiv.innerText = "Entrando...";
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // ¡Inicio de sesión exitoso!
+                    const user = userCredential.user;
+                    mensajeDiv.style.color = "green";
+                    mensajeDiv.innerText = `¡Bienvenido de vuelta, ${user.email}!`;
+                    
+                    // Aquí es donde en el futuro los enviaremos al "Muro"
+                })
+                .catch((error) => {
+                    // Si se equivocan de contraseña o no existe el usuario
+                    mensajeDiv.style.color = "red";
+                    mensajeDiv.innerText = "Correo o contraseña incorrectos.";
+                });
+        });
+    </script>
+</body>
+</html>
