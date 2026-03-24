@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wueychat - Muro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .navbar h1 {
+            color: #1877f2;
+            margin: 0;
+            font-size: 24px;
+        }
+        .btn-salir {
+            background-color: #e4e6eb;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-salir:hover { background-color: #d8dadf; }
+        .contenedor-publicacion {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            resize: none;
+            font-size: 16px;
+        }
+        .btn-publicar {
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>Wueychat</h1>
+        <div>
+            <span id="correo-usuario" style="margin-right: 15px; color: #606770;">Cargando...</span>
+            <button id="btn-salir" class="btn-salir">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="contenedor-publicacion">
+        <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
+        <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
+            authDomain: "wueychat.firebaseapp.com",
+            projectId: "wueychat",
+            storageBucket: "wueychat.firebasestorage.app",
+            messagingSenderId: "889745387297",
+            appId: "1:889745387297:web:1b8343a328d854fc99d860",
+            measurementId: "G-LKQ86ZXTRK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Seguridad: Vigilar si el usuario tiene permiso de estar aquí
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // El usuario está conectado, mostramos su correo
+                document.getElementById("correo-usuario").innerText = user.email;
+            } else {
+                // ¡Intruso! No ha iniciado sesión, lo regresamos al inicio
+                window.location.href = "index.html";
+            }
+        });
+
+        // Función para cerrar sesión
+        document.getElementById("btn-salir").addEventListener("click", () => {
+            signOut(auth).then(() => {
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Error al salir:", error);
+            });
+        });
+    </script>
+</body>
+</html>
