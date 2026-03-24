@@ -97,11 +97,10 @@
     </div>
 
     <script type="module">
-        // 1. Importar Firebase y las DOS funciones (Registro e Inicio de sesión)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // 2. Tu configuración de Wueychat
+        // Tu configuración de Wueychat
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
             authDomain: "wueychat.firebaseapp.com",
@@ -112,11 +111,9 @@
             measurementId: "G-LKQ86ZXTRK"
         };
 
-        // 3. Encender Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // Referencias a los botones y campos
         const btnLogin = document.getElementById("btn-login");
         const btnRegistrar = document.getElementById("btn-registrar");
         const mensajeDiv = document.getElementById("mensaje");
@@ -139,8 +136,13 @@
 
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
+                    // Firebase inicia sesión automáticamente al registrarse
                     mensajeDiv.style.color = "green";
-                    mensajeDiv.innerText = "¡Cuenta creada! Ya puedes iniciar sesión.";
+                    mensajeDiv.innerText = "¡Cuenta creada! Entrando al muro...";
+                    // Esperamos 1 segundo y medio y lo enviamos al muro
+                    setTimeout(() => {
+                        window.location.href = "muro.html";
+                    }, 1500);
                 })
                 .catch((error) => {
                     mensajeDiv.style.color = "red";
@@ -164,15 +166,12 @@
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // ¡Inicio de sesión exitoso!
-                    const user = userCredential.user;
+                    // ¡Inicio de sesión exitoso! Lo enviamos al muro:
                     mensajeDiv.style.color = "green";
-                    mensajeDiv.innerText = `¡Bienvenido de vuelta, ${user.email}!`;
-                    
-                    // Aquí es donde en el futuro los enviaremos al "Muro"
+                    mensajeDiv.innerText = "¡Conectado! Redirigiendo...";
+                    window.location.href = "muro.html";
                 })
                 .catch((error) => {
-                    // Si se equivocan de contraseña o no existe el usuario
                     mensajeDiv.style.color = "red";
                     mensajeDiv.innerText = "Correo o contraseña incorrectos.";
                 });
