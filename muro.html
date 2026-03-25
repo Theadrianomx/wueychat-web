@@ -11,7 +11,6 @@
             margin: 0;
             padding: 20px;
         }
-        /* Contenedores centrales para que no se vea estirado en PC */
         .contenedor-principal {
             max-width: 600px;
             margin: 0 auto;
@@ -56,6 +55,12 @@
             resize: none;
             font-size: 16px;
         }
+        /* Nuevo estilo para el botón de subir foto */
+        input[type="file"] {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
         .btn-publicar {
             background-color: #1877f2;
             color: white;
@@ -64,11 +69,10 @@
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            width: 100%;
         }
         .btn-publicar:hover { background-color: #166fe5; }
         
-        /* Estilos para las publicaciones de los amigos */
         .post {
             background-color: white;
             padding: 15px;
@@ -86,6 +90,13 @@
             color: #050505;
             font-size: 16px;
             line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        /* Estilo para que las imágenes del muro se vean bien */
+        .post-imagen {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -102,7 +113,11 @@
 
         <div class="contenedor-publicacion">
             <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
+            
+            <input type="file" id="imagen-publicacion" accept="image/*">
+            
             <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
+            <p id="mensaje-publicando" style="color: #1877f2; font-size: 14px; display: none; text-align: center;">Subiendo publicación, espera un momento...</p>
         </div>
 
         <div id="feed"></div>
@@ -111,7 +126,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // Importamos las herramientas de la Base de Datos (Firestore)
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -126,16 +140,18 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app); // Encendemos la conexión a la base de datos
+        const db = getFirestore(app);
+
+        // Tu llave de ImgBB
+        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f";
 
         let usuarioActual = null;
 
-        // Verificar quién entró
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 usuarioActual = user;
                 document.getElementById("correo-usuario").innerText = user.email;
-                cargarPublicaciones(); // Llamamos a la función que lee el muro
+                cargarPublicaciones();
             } else {
                 window.location.href = "index.html";
             }
@@ -147,49 +163,99 @@
             });
         });
 
-        // 1. GUARDAR LA PUBLICACIÓN
         const btnPublicar = document.getElementById("btn-publicar");
         const inputTexto = document.getElementById("texto-publicacion");
+        const inputImagen = document.getElementById("imagen-publicacion");
+        const mensajePublicando = document.getElementById("mensaje-publicando");
 
         btnPublicar.addEventListener("click", async () => {
             const texto = inputTexto.value.trim();
-            if (texto === "") return; // Si está vacío, no hace nada
+            const archivoImagen = inputImagen.files[0];
+
+            // Si no hay texto ni imagen, no hacemos nada
+            if (texto === "" && !archivoImagen) return;
+
+            // Mostramos un mensaje de espera porque las fotos tardan un poquito en subir
+            btnPublicar.disabled = true;
+            mensajePublicando.style.display = "block";
+
+            let urlImagenFinal = null;
 
             try {
-                // Le decimos a Firebase: Agrega un documento en la colección "publicaciones"
+                // Si el usuario eligió una imagen, primero la mandamos a ImgBB
+                if (archivoImagen) {
+                    const formData = new FormData();
+                    formData.append("image", archivoImagen);
+
+                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const datosImgbb = await respuestaImgbb.json();
+                    
+                    if (datosImgbb.success) {
+                        urlImagenFinal = datosImgbb.data.url; // Rescatamos el enlace directo
+                    } else {
+                        alert("Error al subir la imagen a ImgBB.");
+                        btnPublicar.disabled = false;
+                        mensajePublicando.style.display = "none";
+                        return;
+                    }
+                }
+
+                // Ahora sí, guardamos el texto y el enlace de la imagen en Firebase
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
                     texto: texto,
-                    fecha: serverTimestamp() // Hora exacta para saber cuál va primero
+                    imagenUrl: urlImagenFinal, // Puede ser el enlace o null si no subió foto
+                    fecha: serverTimestamp()
                 });
-                inputTexto.value = ""; // Limpiamos la caja para que puedan escribir otro
+
+                // Limpiamos todo para la siguiente publicación
+                inputTexto.value = "";
+                inputImagen.value = "";
+                btnPublicar.disabled = false;
+                mensajePublicando.style.display = "none";
+
             } catch (error) {
                 console.error("Error al publicar:", error);
-                alert("Hubo un error. Revisa que las reglas de Firebase estén bien guardadas.");
+                alert("Hubo un error al conectar con la base de datos.");
+                btnPublicar.disabled = false;
+                mensajePublicando.style.display = "none";
             }
         });
 
-        // 2. LEER LAS PUBLICACIONES (EN TIEMPO REAL)
         function cargarPublicaciones() {
             const feedDiv = document.getElementById("feed");
-            // Ordenamos: de la fecha más nueva a la más vieja
             const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
 
-            // onSnapshot se queda escuchando 24/7 si hay mensajes nuevos
             onSnapshot(q, (snapshot) => {
-                feedDiv.innerHTML = ""; // Limpiamos la pantalla para no duplicar
+                feedDiv.innerHTML = "";
                 
                 snapshot.forEach((doc) => {
                     const post = doc.data();
                     
-                    // Solo mostramos posts que ya tienen fecha registrada
                     if (post.fecha) {
                         const cajaPost = document.createElement("div");
                         cajaPost.classList.add("post");
-                        cajaPost.innerHTML = `
+                        
+                        // Armamos el HTML básico de la publicación
+                        let htmlContenido = `
                             <div class="post-autor">${post.autor}</div>
-                            <div class="post-texto">${post.texto}</div>
                         `;
+
+                        // Si hay texto, lo agregamos
+                        if (post.texto) {
+                            htmlContenido += `<div class="post-texto">${post.texto}</div>`;
+                        }
+
+                        // Si hay imagen, la agregamos
+                        if (post.imagenUrl) {
+                            htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen" alt="Imagen subida">`;
+                        }
+
+                        cajaPost.innerHTML = htmlContenido;
                         feedDiv.appendChild(cajaPost);
                     }
                 });
