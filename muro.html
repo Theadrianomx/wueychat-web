@@ -55,11 +55,10 @@
         .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
         .btn-eliminar { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px 12px; }
 
-        /* NUEVO: ESTILOS PARA COMENTARIOS */
+        /* Comentarios */
         .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
         .comentario { background-color: var(--fondo-comentario); padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 14px; display: inline-block; max-width: 90%; }
         .comentario strong { color: var(--texto-principal); margin-right: 5px; }
-        
         .caja-escribir-comentario { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
         .input-comentario { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo); color: var(--texto-principal); font-size: 14px; }
         .btn-enviar-comentario { background-color: var(--color-primario); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
@@ -95,7 +94,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // NUEVO: Importamos arrayUnion para guardar comentarios
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -163,7 +161,6 @@
                     if (datosImgbb.success) urlImagenFinal = datosImgbb.data.url;
                 }
                 
-                // NUEVO: Agregamos "comentarios: []" vacío al crear la nota
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
                     autorNombre: usuarioActual.displayName || "Wuey sin nombre", 
@@ -184,72 +181,74 @@
             onSnapshot(q, (snapshot) => {
                 feedDiv.innerHTML = "";
                 snapshot.forEach((documentoFirebase) => {
-                    const post = documentoFirebase.data();
-                    const postId = documentoFirebase.id; 
-                    
-                    if (post.fecha) {
-                        const cajaPost = document.createElement("div"); cajaPost.classList.add("post");
-                        const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
-                        const fechaObj = post.fecha.toDate();
-                        const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
+                    // ESCUDO DE TITANIO: Si una nota falla, las demás se siguen dibujando
+                    try {
+                        const post = documentoFirebase.data();
+                        const postId = documentoFirebase.id; 
                         
-                        let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`;
+                        if (post.fecha) {
+                            const cajaPost = document.createElement("div"); cajaPost.classList.add("post");
+                            const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
+                            
+                            // Transformar fecha segura
+                            const fechaObj = post.fecha.toDate();
+                            const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
+                            
+                            let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`;
 
-                        let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fechaTexto}</div></div></div>`;
-                        if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
-                        if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                            let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fechaTexto}</div></div></div>`;
+                            if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
+                            if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
 
-                        const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null;
-                        for (const [correo, emoji] of Object.entries(reacciones)) {
-                            conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1;
-                            if (correo === llaveUsuarioActual) miReaccionActual = emoji;
-                        }
-                        const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   ');
-                        let botonEliminarHTML = post.autor === usuarioActual.email ? `<button class="btn-eliminar" data-id="${postId}">🗑️</button>` : "";
+                            // Reacciones
+                            const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null;
+                            for (const [correo, emoji] of Object.entries(reacciones)) {
+                                conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1;
+                                if (correo === llaveUsuarioActual) miReaccionActual = emoji;
+                            }
+                            const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   ');
+                            let botonEliminarHTML = post.autor === usuarioActual.email ? `<button class="btn-eliminar" data-id="${postId}">🗑️</button>` : "";
 
-                        htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonEliminarHTML}</div>`;
+                            htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonEliminarHTML}</div>`;
 
-                        // --- NUEVO: RENDERIZAR COMENTARIOS ---
-                        let htmlComentarios = `<div class="seccion-comentarios">`;
-                        
-                        // Si hay comentarios, los dibujamos
-                        if (post.comentarios && post.comentarios.length > 0) {
-                            post.comentarios.forEach(comentario => {
-                                htmlComentarios += `
-                                    <div style="margin-bottom: 5px;">
-                                        <div class="comentario">
-                                            <strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}
+                            // Comentarios
+                            let htmlComentarios = `<div class="seccion-comentarios">`;
+                            if (post.comentarios && post.comentarios.length > 0) {
+                                post.comentarios.forEach(comentario => {
+                                    htmlComentarios += `
+                                        <div style="margin-bottom: 5px;">
+                                            <div class="comentario">
+                                                <strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}
+                                            </div>
                                         </div>
-                                    </div>
-                                `;
-                            });
+                                    `;
+                                });
+                            }
+                            htmlComentarios += `
+                                <div class="caja-escribir-comentario">
+                                    <input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario...">
+                                    <button class="btn-enviar-comentario" data-id="${postId}">➤</button>
+                                </div>
+                            </div>`;
+
+                            htmlContenido += htmlComentarios;
+                            cajaPost.innerHTML = htmlContenido; 
+                            feedDiv.appendChild(cajaPost);
                         }
-
-                        // Caja para escribir un comentario nuevo
-                        htmlComentarios += `
-                            <div class="caja-escribir-comentario">
-                                <input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario...">
-                                <button class="btn-enviar-comentario" data-id="${postId}">➤</button>
-                            </div>
-                        </div>`;
-
-                        htmlContenido += htmlComentarios;
-                        cajaPost.innerHTML = htmlContenido; 
-                        feedDiv.appendChild(cajaPost);
+                    } catch (errorPost) {
+                        console.log("Se ignoró una nota vieja con formato incorrecto.");
                     }
                 });
             });
         }
 
         document.getElementById("feed").addEventListener("click", async (e) => {
-            // Reacciones
             if (e.target.classList.contains("emoji")) {
                 const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji");
                 const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
                 try { await updateDoc(ref, act); } catch (err) { console.error(err); }
             }
             
-            // Eliminar nota
             if (e.target.classList.contains("btn-eliminar")) {
                 const postId = e.target.getAttribute("data-id");
                 if (confirm("¿Borrar nota para siempre?")) {
@@ -257,44 +256,31 @@
                 }
             }
             
-            // --- NUEVO: ENVIAR COMENTARIO ---
             if (e.target.classList.contains("btn-enviar-comentario")) {
                 const postId = e.target.getAttribute("data-id");
                 const inputElemento = document.getElementById(`input-comentario-${postId}`);
                 const textoComentario = inputElemento.value.trim();
                 
                 if (textoComentario !== "") {
-                    // Deshabilitamos el botón para evitar doble clic
                     e.target.disabled = true;
-                    
                     try {
                         const ref = doc(db, "publicaciones", postId);
-                        
-                        // Empaquetamos el nuevo comentario
-                        const nuevoComentario = {
-                            autor: usuarioActual.email,
-                            autorNombre: usuarioActual.displayName || "Usuario",
-                            texto: textoComentario
-                        };
-                        
-                        // Usamos arrayUnion para agregarlo al final de la lista sin borrar los anteriores
-                        await updateDoc(ref, {
-                            comentarios: arrayUnion(nuevoComentario)
-                        });
-                        
-                        inputElemento.value = ""; // Limpiamos la caja
-                    } catch (err) {
-                        console.error("Error al comentar:", err);
-                        alert("Hubo un error al enviar el comentario.");
-                    } finally {
-                        e.target.disabled = false;
-                    }
+                        const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: textoComentario };
+                        await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) });
+                        inputElemento.value = ""; 
+                    } catch (err) { alert("Error al comentar."); } 
+                    finally { e.target.disabled = false; }
                 }
             }
         });
         
-        // También permitir enviar el comentario presionando la tecla "Enter"
         document.getElementById("feed").addEventListener("keypress", async (e) => {
             if (e.key === "Enter" && e.target.classList.contains("input-comentario")) {
                 const postId = e.target.id.replace("input-comentario-", "");
-                const btnEnviar = document.querySelector
+                const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`);
+                if(btnEnviar) btnEnviar.click();
+            }
+        });
+    </script>
+</body>
+</html>
