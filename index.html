@@ -30,13 +30,14 @@
         
         <button id="btn-login" class="btn-login">Iniciar sesión</button>
         <p id="mensaje"></p>
+        
         <div class="linea-separadora"></div>
+        
         <button id="btn-registrar" class="btn-registro">Crear cuenta nueva</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // NUEVO: Importamos updateProfile
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -59,12 +60,13 @@
         const inputEmail = document.getElementById("email");
         const inputPassword = document.getElementById("password");
 
-        // --- REGISTRAR ---
+        // --- REGISTRAR USUARIO ---
         btnRegistrar.addEventListener("click", () => {
             const nombre = inputNombre.value.trim();
             const email = inputEmail.value.trim();
             const password = inputPassword.value;
 
+            // Verificamos que llenen todo
             if(!email || !password || !nombre) {
                 mensajeDiv.style.color = "red";
                 mensajeDiv.innerText = "Llena todos los campos (incluyendo tu nombre).";
@@ -76,21 +78,25 @@
 
             createUserWithEmailAndPassword(auth, email, password)
                 .then(async (userCredential) => {
-                    // NUEVO: Le pegamos el nombre al perfil recién creado
                     const user = userCredential.user;
+                    
+                    // Le pegamos el nombre al perfil recién creado
                     await updateProfile(user, { displayName: nombre });
 
+                    // Mensaje de éxito y redirección a PERFIL
                     mensajeDiv.style.color = "green";
                     mensajeDiv.innerText = "¡Cuenta creada! Vamos a configurar tu perfil...";
-setTimeout(() => { window.location.href = "perfil.html"; }, 1500);
-                    
+                    setTimeout(() => { 
+                        window.location.href = "perfil.html"; 
+                    }, 1500);
+                })
                 .catch((error) => {
                     mensajeDiv.style.color = "red";
                     mensajeDiv.innerText = "Error: " + error.message;
                 });
         });
 
-        // --- INICIAR SESIÓN ---
+        // --- INICIAR SESIÓN (Usuarios que ya tienen cuenta) ---
         btnLogin.addEventListener("click", () => {
             const email = inputEmail.value.trim();
             const password = inputPassword.value;
@@ -106,6 +112,7 @@ setTimeout(() => { window.location.href = "perfil.html"; }, 1500);
 
             signInWithEmailAndPassword(auth, email, password)
                 .then(() => {
+                    // Los usuarios viejos van directo al MURO
                     window.location.href = "muro.html";
                 })
                 .catch(() => {
