@@ -19,17 +19,14 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
         .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
 
-        /* BARRAS */
         .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border-bottom: 1px solid var(--borde); }
         .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 2px 5px var(--sombra); gap: 10px; }
         .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
         
-        /* NUEVO: ESTILO DEL BUSCADOR */
         .contenedor-buscador { flex-grow: 1; max-width: 400px; position: relative; }
         .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; transition: all 0.2s; }
         .input-buscador:focus { outline: none; border-color: var(--color-primario); box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
         .icono-lupa { position: absolute; left: 12px; top: 10px; font-size: 14px; color: var(--texto-secundario); }
-        /* Mostrar el logo en pantallas grandes */
         @media (min-width: 500px) { .barra-superior h1 { display: block; } }
 
         .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
@@ -40,7 +37,6 @@
         .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
         .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
 
-        /* PUBLICACIÓN Y POSTS */
         .contenedor-publicacion { background-color: var(--fondo-carta); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); }
         textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
         .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
@@ -56,7 +52,6 @@
         .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
         .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; }
 
-        /* REACCIONES Y COMENTARIOS */
         .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
         .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
         .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
@@ -159,16 +154,15 @@
 
         document.getElementById("btn-salir-top").addEventListener("click", () => signOut(auth));
 
-        // --- LÓGICA DEL BUSCADOR EN TIEMPO REAL ---
+        // BUSCADOR CORREGIDO (Seguro para el navegador)
         document.getElementById("buscador-muro").addEventListener("input", (e) => {
             const textoBuscado = e.target.value.toLowerCase();
             const todasLasNotas = document.querySelectorAll(".post");
             let notasVisibles = 0;
 
             todasLasNotas.forEach(nota => {
-                // Obtenemos todo el texto que está dentro de la nota (nombre, mensaje, comentarios)
-                const contenidoNota = nota.innerText.toLowerCase();
-                
+                // Usamos textContent que no congela la página
+                const contenidoNota = nota.textContent.toLowerCase();
                 if (contenidoNota.includes(textoBuscado)) {
                     nota.style.display = "block";
                     notasVisibles++;
@@ -177,13 +171,8 @@
                 }
             });
 
-            // Mostrar mensaje si no hay resultados
             const mensajeNoResultados = document.getElementById("mensaje-no-resultados");
-            if (notasVisibles === 0 && textoBuscado !== "") {
-                mensajeNoResultados.style.display = "block";
-            } else {
-                mensajeNoResultados.style.display = "none";
-            }
+            mensajeNoResultados.style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none";
         });
 
         const btnPublicar = document.getElementById("btn-publicar");
@@ -209,7 +198,7 @@
                 
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
-                    autorNombre: usuarioActual.displayName || "Wuey sin nombre", 
+                    autorNombre: usuarioActual.displayName || "Usuario", 
                     autorFoto: usuarioActual.photoURL || null,
                     texto: texto, imagenUrl: urlImagenFinal, fecha: serverTimestamp(), 
                     reacciones: {}, comentarios: []
@@ -226,7 +215,6 @@
 
             onSnapshot(q, (snapshot) => {
                 feedDiv.innerHTML = "";
-                // Volver a aplicar el filtro si alguien está buscando algo mientras llega un mensaje nuevo
                 const textoBuscadoActual = document.getElementById("buscador-muro").value.toLowerCase();
 
                 snapshot.forEach((documentoFirebase) => {
@@ -237,7 +225,6 @@
                         if (post.fecha) {
                             const cajaPost = document.createElement("div"); cajaPost.classList.add("post");
                             const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
-                            
                             const fechaObj = post.fecha.toDate();
                             const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
                             
@@ -260,13 +247,7 @@
                             let htmlComentarios = `<div class="seccion-comentarios">`;
                             if (post.comentarios && post.comentarios.length > 0) {
                                 post.comentarios.forEach(comentario => {
-                                    htmlComentarios += `
-                                        <div style="margin-bottom: 5px;">
-                                            <div class="comentario">
-                                                <strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}
-                                            </div>
-                                        </div>
-                                    `;
+                                    htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}</div></div>`;
                                 });
                             }
                             htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}">➤</button></div></div>`;
@@ -274,14 +255,14 @@
                             htmlContenido += htmlComentarios;
                             cajaPost.innerHTML = htmlContenido; 
 
-                            // Filtrar si el buscador está activo al cargar
-                            if (textoBuscadoActual !== "" && !cajaPost.innerText.toLowerCase().includes(textoBuscadoActual)) {
+                                                        // Filtrado seguro antes de pegar en la pantalla
+                            if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) {
                                 cajaPost.style.display = "none";
                             }
 
                             feedDiv.appendChild(cajaPost);
                         }
-                    } catch (errorPost) {}
+                    } catch (errorPost) { console.log("Nota ignorada por error en formato."); }
                 });
             });
         }
@@ -289,4 +270,39 @@
         document.getElementById("feed").addEventListener("click", async (e) => {
             if (e.target.classList.contains("emoji")) {
                 const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji");
-                const ref = doc(db, "publicaciones", postId); const act =
+                const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
+                try { await updateDoc(ref, act); } catch (err) { console.error(err); }
+            }
+            if (e.target.classList.contains("btn-eliminar")) {
+                const postId = e.target.getAttribute("data-id");
+                if (confirm("¿Borrar nota para siempre?")) {
+                    try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { console.error(err); }
+                }
+            }
+            if (e.target.classList.contains("btn-enviar-comentario")) {
+                const postId = e.target.getAttribute("data-id");
+                const inputElemento = document.getElementById(`input-comentario-${postId}`);
+                const textoComentario = inputElemento.value.trim();
+                if (textoComentario !== "") {
+                    e.target.disabled = true;
+                    try {
+                        const ref = doc(db, "publicaciones", postId);
+                        const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: textoComentario };
+                        await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) });
+                        inputElemento.value = ""; 
+                    } catch (err) { alert("Error al comentar."); } 
+                    finally { e.target.disabled = false; }
+                }
+            }
+        });
+        
+        document.getElementById("feed").addEventListener("keypress", async (e) => {
+            if (e.key === "Enter" && e.target.classList.contains("input-comentario")) {
+                const postId = e.target.id.replace("input-comentario-", "");
+                const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`);
+                if(btnEnviar) btnEnviar.click();
+            }
+        });
+    </script>
+</body>
+</html>
