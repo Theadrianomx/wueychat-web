@@ -81,9 +81,9 @@
                     await updateProfile(user, { displayName: nombre });
 
                     mensajeDiv.style.color = "green";
-                    mensajeDiv.innerText = "¡Cuenta creada! Entrando al muro...";
-                    setTimeout(() => { window.location.href = "muro.html"; }, 1500);
-                })
+                    mensajeDiv.innerText = "¡Cuenta creada! Vamos a configurar tu perfil...";
+setTimeout(() => { window.location.href = "perfil.html"; }, 1500);
+                    
                 .catch((error) => {
                     mensajeDiv.style.color = "red";
                     mensajeDiv.innerText = "Error: " + error.message;
