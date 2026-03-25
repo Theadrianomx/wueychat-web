@@ -21,7 +21,12 @@
         .btn-publicar:hover { background-color: #166fe5; }
         
         .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .post-autor { font-weight: bold; color: #1c1e21; margin-bottom: 8px; font-size: 14px; }
+        
+        /* NUEVO ESTILO: Para el enlace del autor */
+        .post-autor a { font-weight: bold; color: #1c1e21; font-size: 16px; text-decoration: none; }
+        .post-autor a:hover { text-decoration: underline; color: #1877f2; }
+        .post-autor { margin-bottom: 8px; }
+        
         .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
         .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
 
@@ -52,7 +57,7 @@
             <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
             <input type="file" id="imagen-publicacion" accept="image/*">
             <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
-            <p id="mensaje-publicando" style="color: #1877f2; font-size: 14px; display: none; text-align: center;">Subiendo publicación, espera un momento...</p>
+            <p id="mensaje-publicando" style="color: #1877f2; font-size: 14px; display: none; text-align: center;">Subiendo publicación...</p>
         </div>
 
         <div id="feed"></div>
@@ -85,7 +90,6 @@
             if (user) {
                 usuarioActual = user;
                 llaveUsuarioActual = user.email.replace(/\./g, '_'); 
-                // Mostramos el Nombre en la barra superior (si no tiene, muestra el correo)
                 document.getElementById("correo-usuario").innerText = user.displayName || user.email;
                 cargarPublicaciones();
             } else {
@@ -115,13 +119,11 @@
                 if (archivoImagen) {
                     const formData = new FormData();
                     formData.append("image", archivoImagen);
-
                     const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
                     const datosImgbb = await respuestaImgbb.json();
                     if (datosImgbb.success) urlImagenFinal = datosImgbb.data.url;
                 }
 
-                // Guardamos el Nombre y el Correo en la base de datos
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
                     autorNombre: usuarioActual.displayName || "Usuario sin nombre", 
@@ -154,10 +156,15 @@
                         const cajaPost = document.createElement("div");
                         cajaPost.classList.add("post");
                         
-                        // Elegimos mostrar el Nombre. Si es una cuenta vieja que no lo tiene, mostramos el correo.
                         const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
                         
-                        let htmlContenido = `<div class="post-autor">${nombreMostrar}</div>`;
+                        // NUEVO: El nombre ahora es un enlace que te manda a perfil_publico.html
+                        let htmlContenido = `
+                            <div class="post-autor">
+                                <a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a>
+                            </div>
+                        `;
+                        
                         if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
                         if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
 
@@ -170,15 +177,11 @@
                             if (correoModificado === llaveUsuarioActual) miReaccionActual = emoji;
                         }
 
-                        const textoReacciones = Object.entries(conteoEmojis)
-                            .map(([e, total]) => `${e} ${total}`)
-                            .join('   ');
+                        const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   ');
 
                         htmlContenido += `
                             <div class="contenedor-reacciones">
-                                <button class="btn-reaccionar">
-                                    ${miReaccionActual ? miReaccionActual : '👍'} Reaccionar
-                                </button>
+                                <button class="btn-reaccionar">${miReaccionActual ? miReaccionActual : '👍'} Reaccionar</button>
                                 <div class="menu-emojis">
                                     <span class="emoji" data-id="${postId}" data-emoji="👍">👍</span>
                                     <span class="emoji" data-id="${postId}" data-emoji="❤️">❤️</span>
