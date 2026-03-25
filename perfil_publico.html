@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wueychat - Perfil de Usuario</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .contenedor-principal { max-width: 600px; margin: 0 auto; }
+        .navbar { background-color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px; }
+        .navbar h1 { color: #1877f2; margin: 0; font-size: 24px; }
+        .enlaces-nav a { color: #1877f2; text-decoration: none; font-weight: bold; margin-right: 15px; }
+        
+        .cabecera-perfil { background-color: white; padding: 40px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
+        .avatar-temporal { width: 120px; height: 120px; background-color: #42b72a; color: white; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 50px; font-weight: bold; margin-bottom: 10px; }
+        .nombre-perfil { font-size: 24px; color: #1c1e21; font-weight: bold; margin: 0; }
+        .datos-extra { color: #606770; font-size: 15px; margin-top: 8px; }
+        
+        .titulo-seccion { color: #606770; font-size: 18px; margin-bottom: 10px; }
+        .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-principal">
+        <div class="navbar">
+            <h1>Wueychat</h1>
+            <div class="enlaces-nav">
+                <a href="muro.html">← Volver al Muro</a>
+            </div>
+        </div>
+
+        <div class="cabecera-perfil">
+            <div class="avatar-temporal" id="avatar-letra">?</div>
+            <h2 class="nombre-perfil" id="nombre-perfil-texto">Cargando perfil...</h2>
+            <div class="datos-extra" id="datos-perfil">Buscando datos...</div>
+        </div>
+
+        <h3 class="titulo-seccion">Publicaciones</h3>
+        <div id="publicaciones-usuario"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, where, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
+            authDomain: "wueychat.firebaseapp.com",
+            projectId: "wueychat",
+            storageBucket: "wueychat.firebasestorage.app",
+            messagingSenderId: "889745387297",
+            appId: "1:889745387297:web:1b8343a328d854fc99d860",
+            measurementId: "G-LKQ86ZXTRK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // EXTRAER EL CORREO DEL ENLACE
+        const urlParams = new URLSearchParams(window.location.search);
+        const correoVisitado = urlParams.get('usuario');
+
+        // Si entras a esta página sin un usuario en el enlace, te regresa al muro
+        if (!correoVisitado) {
+            window.location.href = "muro.html";
+        }
+
+        // Primero revisamos que estés conectado
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                cargarPerfilPublico();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        async function cargarPerfilPublico() {
+            // Ponemos la inicial del correo como avatar
+            document.getElementById("avatar-letra").innerText = correoVisitado.charAt(0).toUpperCase();
+            document.getElementById("nombre-perfil-texto").innerText = correoVisitado; // Por si no tiene nombre
+
+            // 1. BUSCAR SUS DATOS (EDAD Y GÉNERO)
+            const docUsuario = await getDoc(doc(db, "usuarios", correoVisitado));
+            if (docUsuario.exists()) {
+                const datos = docUsuario.data();
+                document.getElementById("datos-perfil").innerText = `${datos.genero || 'Sin género'} • ${datos.edad ? datos.edad + ' años' : 'Edad desconocida'}`;
+            } else {
+                document.getElementById("datos-perfil").innerText = "Usuario de Wueychat";
+            }
+
+            // 2. BUSCAR SUS PUBLICACIONES
+            const feedDiv = document.getElementById("publicaciones-usuario");
+            const q = query(collection(db, "publicaciones"), where("autor", "==", correoVisitado));
+
+            onSnapshot(q, (snapshot) => {
+                feedDiv.innerHTML = "";
+                let susPosts = [];
+                
+                snapshot.forEach((documentoFirebase) => {
+                    const post = documentoFirebase.data();
+                    if (post.fecha) susPosts.push(post);
+                });
+
+                // Si tiene publicaciones, rescatamos su nombre oficial de una de ellas
+                if (susPosts.length > 0 && susPosts[0].autorNombre) {
+                    document.getElementById("nombre-perfil-texto").innerText = susPosts[0].autorNombre;
+                }
+
+                susPosts.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
+                
+                if(susPosts.length === 0) {
+                    feedDiv.innerHTML = "<p style='text-align: center; color: #606770;'>Este usuario aún no tiene publicaciones.</p>";
+                    return;
+                }
+
+                susPosts.forEach((post) => {
+                    const cajaPost = document.createElement("div");
+                    cajaPost.classList.add("post");
+                    let htmlContenido = "";
+                    if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
+                    if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                    cajaPost.innerHTML = htmlContenido;
+                    feedDiv.appendChild(cajaPost);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
