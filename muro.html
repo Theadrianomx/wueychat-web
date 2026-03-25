@@ -1,79 +1,186 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wueychat - Muro</title>
+    <title>Wueychat - Muro Premium</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .contenedor-principal { max-width: 600px; margin: 0 auto; }
-        .navbar { background-color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px; }
-        .navbar h1 { color: #1877f2; margin: 0; font-size: 24px; }
-        .enlaces-nav { display: flex; align-items: center; }
-        .enlaces-nav a { color: #1877f2; text-decoration: none; font-weight: bold; margin-right: 15px; }
-        .enlaces-nav a:hover { text-decoration: underline; }
-        .btn-salir { background-color: #e4e6eb; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-salir:hover { background-color: #d8dadf; }
-        .contenedor-publicacion { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: none; font-size: 16px; }
-        input[type="file"] { margin-top: 10px; margin-bottom: 10px; font-size: 14px; }
-        .btn-publicar { background-color: #1877f2; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-publicar:hover { background-color: #166fe5; }
+        /* --- VARIABLES DE DISEÑO (Colores Premium) --- */
+        :root[data-theme="light"] {
+            --fondo: #f0f2f5;
+            --fondo-carta: #ffffff;
+            --texto-principal: #1c1e21;
+            --texto-secundario: #606770;
+            --color-primario: #1877f2;
+            --color-hover: #166fe5;
+            --borde: #dddfe2;
+            --sombra: rgba(0, 0, 0, 0.1);
+            --fondo-barra: rgba(255, 255, 255, 0.8); /* Glassmorphism light */
+        }
         
-        .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
-        
-        .post-cabecera { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-        .post-autor a { font-weight: bold; color: #1c1e21; font-size: 16px; text-decoration: none; }
-        .post-autor a:hover { text-decoration: underline; color: #1877f2; }
-        .post-fecha { font-size: 12px; color: #606770; }
-        
-        .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
-        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        :root[data-theme="dark"] {
+            --fondo: #18191a;
+            --fondo-carta: #242526;
+            --texto-principal: #e4e6eb;
+            --texto-secundario: #b0b3b8;
+            --color-primario: #2e89ff;
+            --color-hover: #4e9eff;
+            --borde: #3e4042;
+            --sombra: rgba(0, 0, 0, 0.3);
+            --fondo-barra: rgba(36, 37, 38, 0.8); /* Glassmorphism dark */
+        }
 
-        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 10px; border-top: 1px solid #dadde1; display: flex; align-items: center; justify-content: space-between; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
         
-        .seccion-izquierda { display: flex; align-items: center; gap: 15px; }
-        .btn-reaccionar { background: none; border: none; color: #606770; font-weight: bold; cursor: pointer; padding: 8px 12px; border-radius: 4px; font-size: 14px; }
-        .btn-reaccionar:hover { background-color: #f0f2f5; }
+        /* --- LAYOUT PRINCIPAL --- */
+        .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+
+        /* --- BARRAS SUPERIOR E INFERIOR (Glassmorphism) --- */
+        .barra-superior, .barra-inferior {
+            position: fixed; left: 0; width: 100%; box-sizing: border-box;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            background-color: var(--fondo-barra); z-index: 100;
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+
+        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--borde); box-shadow: 0 2px 4px var(--sombra); }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -1px; }
+
+        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 4px var(--sombra); }
+
+        /* --- BOTONES Y ENLACES PREMIUM --- */
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 10px; border-radius: 50%; transition: all 0.2s ease; }
+        .btn-icono:hover { background-color: rgba(128, 128, 128, 0.1); transform: scale(1.1); }
+        .btn-icono.activo { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+
+        .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
+        .nav-link:hover { color: var(--color-primario); }
+
+        /* --- ANIMACIONES KEYFRAMES --- */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+        /* --- CONTENEDOR PUBLICAR --- */
+        .contenedor-publicacion {
+            background-color: var(--fondo-carta); padding: 20px; border-radius: 16px;
+            box-shadow: 0 4px 12px var(--sombra); margin-bottom: 25px;
+            animation: popIn 0.5s ease-out; /* Animación de entrada */
+            border: 1px solid var(--borde);
+        }
+        textarea {
+            width: 100%; padding: 15px; border: 1px solid var(--borde); border-radius: 12px;
+            box-sizing: border-box; resize: none; font-size: 16px;
+            background-color: var(--fondo); color: var(--texto-principal);
+            transition: all 0.2s ease;
+        }
+        textarea:focus { outline: none; border-color: var(--color-primario); box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2); }
         
-        .menu-emojis { display: none; position: absolute; bottom: 40px; left: 0; background: white; padding: 5px 10px; border-radius: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); gap: 10px; z-index: 10; }
+        .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; }
+        input[type="file"] { font-size: 14px; color: var(--texto-secundario); max-width: 50%; }
+        
+        .btn-publicar {
+            background-color: var(--color-primario); color: white; border: none;
+            padding: 12px 24px; border-radius: 12px; font-weight: bold; font-size: 16px;
+            cursor: pointer; transition: all 0.2s ease; flex-grow: 1;
+        }
+        .btn-publicar:hover { background-color: var(--color-hover); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn-publicar:active { transform: translateY(0); }
+        .btn-publicar:disabled { background-color: var(--borde); cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        /* --- ESTILOS DE LOS POSTS (Tarjetas Premium) --- */
+        .post {
+            background-color: var(--fondo-carta); padding: 20px; border-radius: 16px;
+            box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px;
+            border: 1px solid var(--borde);
+            animation: fadeInUp 0.4s ease-out; /* Animación al aparecer */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .post:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--sombra); }
+        
+        .post-cabecera { display: flex; align-items: center; margin-bottom: 15px; gap: 12px; }
+        
+        /* Estilo para el Avatar circulito en el muro */
+        .post-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primario); background-color: var(--color-primario); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 20px; }
+        
+        .info-autor { display: flex; flex-direction: column; flex-grow: 1; }
+        .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 17px; text-decoration: none; transition: color 0.2s ease; }
+        .post-autor a:hover { color: var(--color-primario); text-decoration: underline; }
+        .post-fecha { font-size: 13px; color: var(--texto-secundario); margin-top: 2px; }
+        
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; }
+        .post-imagen { max-width: 100%; border-radius: 12px; margin-top: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+
+        /* --- REACCIONES PREMIUM --- */
+        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
+        
+        .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
+        
+        .btn-reaccionar-premium {
+            background-color: var(--fondo); border: 1px solid var(--borde);
+            color: var(--texto-secundario); font-weight: bold;
+            cursor: pointer; padding: 10px 18px; border-radius: 20px; font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .btn-reaccionar-premium:hover { background-color: var(--borde); color: var(--texto-principal); }
+        
+        /* Burbuja de emojis animada */
+        .menu-emojis {
+            display: none; position: absolute; bottom: 55px; left: 0;
+            background: var(--fondo-carta); padding: 8px 15px; border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); gap: 12px; z-index: 10;
+            border: 1px solid var(--borde);
+            animation: popIn 0.3s ease-out;
+        }
         .seccion-izquierda:hover .menu-emojis { display: flex; }
-        .emoji { cursor: pointer; font-size: 24px; transition: transform 0.2s; }
-        .emoji:hover { transform: scale(1.3) translateY(-5px); }
-        .lista-reacciones { font-size: 15px; color: #606770; }
+        
+        .emoji { cursor: pointer; font-size: 28px; transition: transform 0.2s ease; display: inline-block; }
+        .emoji:hover { transform: scale(1.4) translateY(-8px); }
+        
+        .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: 500; background-color: var(--fondo); padding: 8px 15px; border-radius: 20px; }
 
-        /* NUEVO ESTILO: Botón de eliminar */
-        .btn-eliminar { background: none; border: none; color: #e41e3f; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px 12px; border-radius: 4px; }
-        .btn-eliminar:hover { background-color: #fce8eb; }
+        .btn-eliminar { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 10px 15px; border-radius: 10px; transition: all 0.2s ease; }
+        .btn-eliminar:hover { background-color: rgba(255, 77, 77, 0.1); }
     </style>
 </head>
 <body>
 
-    <div class="contenedor-principal">
-        <div class="navbar">
-            <h1>Wueychat</h1>
-            <div class="enlaces-nav">
-                <span id="correo-usuario" style="margin-right: 15px; color: #606770;">Cargando...</span>
-                <a href="perfil.html">Mi Perfil</a>
-                <button id="btn-salir" class="btn-salir">Salir</button>
-            </div>
+    <div class="barra-superior">
+        <h1>Wueychat</h1>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-theme" class="btn-icono">☀️</button>
+            <button id="btn-salir-top" class="btn-eliminar" style="font-size: 12px; padding: 8px;">Salir</button>
         </div>
+    </div>
 
+    <div class="contenedor-principal">
         <div class="contenedor-publicacion">
-            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
-            <input type="file" id="imagen-publicacion" accept="image/*">
-            <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
-            <p id="mensaje-publicando" style="color: #1877f2; font-size: 14px; display: none; text-align: center;">Subiendo publicación...</p>
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente, Adriano?"></textarea>
+            <div class="acciones-publicar">
+                <input type="file" id="imagen-publicacion" accept="image/*">
+                <button id="btn-publicar" class="btn-publicar">Publicar</button>
+            </div>
+            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 15px; font-weight: bold;">✨ Subiendo tu magia...</p>
         </div>
 
         <div id="feed"></div>
     </div>
 
+    <div class="barra-inferior">
+        <a href="muro.html" class="nav-link activo">
+            <button class="btn-icono activo">🏠</button>
+            <span>Inicio</span>
+        </a>
+        <a href="perfil.html" class="nav-link">
+            <button class="btn-icono">👤</button>
+            <span>Mi Perfil</span>
+        </a>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // NUEVO: Importamos deleteDoc
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // Importamos getDoc para buscar los avatares
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
@@ -93,19 +200,43 @@
         let usuarioActual = null;
         let llaveUsuarioActual = null;
 
+        // --- LÓGICA DE MODO OSCURO (PREMIUM) ---
+        const btnTheme = document.getElementById('btn-theme');
+        const html = document.documentElement;
+        
+        // Cargar tema guardado
+        const temaGuardado = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', temaGuardado);
+        btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
+
+        btnTheme.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const nuevoTema = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', nuevoTema);
+            localStorage.setItem('theme', nuevoTema);
+            btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙';
+            
+            // Animación suave de pulso al cambiar
+            btnTheme.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 300 });
+        });
+
+        // --- AUTENTICACIÓN ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 usuarioActual = user;
                 llaveUsuarioActual = user.email.replace(/\./g, '_'); 
-                document.getElementById("correo-usuario").innerText = user.displayName || user.email;
+                // Ya no mostramos el correo arriba, se ve más limpio
                 cargarPublicaciones();
             } else {
                 window.location.href = "index.html";
             }
         });
 
-        document.getElementById("btn-salir").addEventListener("click", () => signOut(auth));
+        const cerrarSesion = () => signOut(auth);
+        document.getElementById("btn-salir-top").addEventListener("click", cerrarSesion);
 
+        // --- PUBLICAR ---
         const btnPublicar = document.getElementById("btn-publicar");
         const inputTexto = document.getElementById("texto-publicacion");
         const inputImagen = document.getElementById("imagen-publicacion");
@@ -119,6 +250,7 @@
 
             btnPublicar.disabled = true;
             mensajePublicando.style.display = "block";
+            btnPublicar.innerText = "Subiendo...";
 
             let urlImagenFinal = null;
 
@@ -131,9 +263,11 @@
                     if (datosImgbb.success) urlImagenFinal = datosImgbb.data.url;
                 }
 
+                // Guardamos la nota CON LA FOTO DE PERFIL ACTUAL del autor
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
-                    autorNombre: usuarioActual.displayName || "Usuario sin nombre", 
+                    autorNombre: usuarioActual.displayName || "Wuey sin nombre", 
+                    autorFoto: usuarioActual.photoURL || null, // NUEVO: Guardamos la foto aquí
                     texto: texto,
                     imagenUrl: urlImagenFinal,
                     fecha: serverTimestamp(),
@@ -141,13 +275,23 @@
                 });
 
                 inputTexto.value = ""; inputImagen.value = "";
-                btnPublicar.disabled = false; mensajePublicando.style.display = "none";
+                inputTexto.style.height = "auto"; // Resetear altura
             } catch (error) {
                 console.error(error); alert("Error al publicar.");
-                btnPublicar.disabled = false; mensajePublicando.style.display = "none";
+            } finally {
+                btnPublicar.disabled = false;
+                mensajePublicando.style.display = "none";
+                btnPublicar.innerText = "Publicar";
             }
         });
 
+        // Auto-expandir textarea al escribir
+        inputTexto.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // --- CARGAR FEED (DIBUJAR TODO PREMIUM) ---
         function cargarPublicaciones() {
             const feedDiv = document.getElementById("feed");
             const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
@@ -165,20 +309,36 @@
                         
                         const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
                         const fechaObj = post.fecha.toDate();
-                        const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+                        // Fecha amigable premium
+                        const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ", " + fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
                         
+                        // --- DIBUJAR AVATAR (NUEVO PREMIUM) ---
+                        let avatarHTML = "";
+                        if (post.autorFoto) {
+                            // Si tiene foto, dibujamos la imagen
+                            avatarHTML = `<img src="${post.autorFoto}" class="post-avatar" alt="Avatar">`;
+                        } else {
+                            // Si no tiene, dibujamos la inicial
+                            const inicial = nombreMostrar.charAt(0).toUpperCase();
+                            avatarHTML = `<div class="post-avatar">${inicial}</div>`;
+                        }
+
                         let htmlContenido = `
                             <div class="post-cabecera">
-                                <div class="post-autor">
-                                    <a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a>
+                                ${avatarHTML}
+                                <div class="info-autor">
+                                    <div class="post-autor">
+                                        <a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a>
+                                    </div>
+                                    <div class="post-fecha">${fechaTexto}</div>
                                 </div>
-                                <div class="post-fecha">${fechaTexto}</div>
                             </div>
                         `;
                         
                         if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
-                        if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                        if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen" loading="lazy">`;
 
+                        // Lógica de Reacciones
                         const reacciones = post.reacciones || {};
                         const conteoEmojis = {};
                         let miReaccionActual = null;
@@ -190,16 +350,15 @@
 
                         const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   ');
 
-                        // NUEVO: Revisamos si el post es mío para dibujar el botón de Eliminar
                         let botonEliminarHTML = "";
                         if (post.autor === usuarioActual.email) {
-                            botonEliminarHTML = `<button class="btn-eliminar" data-id="${postId}">🗑️ Eliminar</button>`;
+                            botonEliminarHTML = `<button class="btn-eliminar" data-id="${postId}">🗑️</button>`;
                         }
 
                         htmlContenido += `
                             <div class="contenedor-reacciones">
                                 <div class="seccion-izquierda">
-                                    <button class="btn-reaccionar">${miReaccionActual ? miReaccionActual : '👍'} Reaccionar</button>
+                                    <button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button>
                                     <div class="menu-emojis">
                                         <span class="emoji" data-id="${postId}" data-emoji="👍">👍</span>
                                         <span class="emoji" data-id="${postId}" data-emoji="❤️">❤️</span>
@@ -207,9 +366,8 @@
                                         <span class="emoji" data-id="${postId}" data-emoji="😮">😮</span>
                                         <span class="emoji" data-id="${postId}" data-emoji="😢">😢</span>
                                     </div>
-                                    <div class="lista-reacciones">${textoReacciones}</div>
+                                    ${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}
                                 </div>
-                                
                                 ${botonEliminarHTML}
                             </div>
                         `;
@@ -219,36 +377,4 @@
                     }
                 });
             });
-        }
-
-        document.getElementById("feed").addEventListener("click", async (e) => {
-            // Acción para reaccionar
-            if (e.target.classList.contains("emoji")) {
-                const postId = e.target.getAttribute("data-id");
-                const emojiElegido = e.target.getAttribute("data-emoji");
-                const referenciaNota = doc(db, "publicaciones", postId);
-                const actualizacion = {};
-                actualizacion[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
-                try { await updateDoc(referenciaNota, actualizacion); } catch (error) { console.error("Error al reaccionar:", error); }
-            }
-            
-            // NUEVO: Acción para eliminar
-            if (e.target.classList.contains("btn-eliminar")) {
-                const postId = e.target.getAttribute("data-id");
-                
-                // Pedimos confirmación para evitar borrados por accidente
-                if (confirm("¿Estás seguro de que quieres eliminar esta publicación para siempre?")) {
-                    try {
-                        const referenciaNota = doc(db, "publicaciones", postId);
-                        await deleteDoc(referenciaNota);
-                        // ¡Firebase actualizará el muro automáticamente y lo quitará!
-                    } catch (error) {
-                        console.error("Error al eliminar:", error);
-                        alert("Hubo un error al intentar eliminar la publicación.");
-                    }
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+  
