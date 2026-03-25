@@ -17,12 +17,10 @@
         .nombre-perfil { font-size: 24px; color: #1c1e21; font-weight: bold; margin: 0; }
         .datos-extra { color: #606770; font-size: 14px; margin-top: 5px; }
         
-        /* Botones de acción del perfil */
         .botones-accion { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         .btn-compartir { background-color: #42b72a; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn-editar { background-color: #e4e6eb; color: #050505; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
         
-        /* Formulario de configuración (Oculto por defecto) */
         .panel-configuracion { display: none; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: left; border-top: 4px solid #1877f2; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; color: #1c1e21; margin-bottom: 5px; }
@@ -31,8 +29,14 @@
         
         .titulo-seccion { color: #606770; font-size: 18px; margin-bottom: 10px; }
         .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .post-fecha { font-size: 12px; color: #606770; margin-bottom: 10px; display: block; }
         .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
         .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        
+        /* NUEVO: Estilo para el botón eliminar en el perfil */
+        .contenedor-acciones-post { border-top: 1px solid #dadde1; margin-top: 15px; padding-top: 10px; text-align: right; }
+        .btn-eliminar { background: none; border: none; color: #e41e3f; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px 12px; border-radius: 4px; }
+        .btn-eliminar:hover { background-color: #fce8eb; }
     </style>
 </head>
 <body>
@@ -61,17 +65,8 @@
 
         <div class="panel-configuracion" id="panel-config">
             <h3>Configura tu perfil</h3>
-            
-            <div class="form-group">
-                <label>Foto de Perfil</label>
-                <input type="file" id="input-foto" accept="image/*">
-            </div>
-            
-            <div class="form-group">
-                <label>Tu Nombre</label>
-                <input type="text" id="input-nombre" placeholder="Escribe tu nombre">
-            </div>
-
+            <div class="form-group"><label>Foto de Perfil</label><input type="file" id="input-foto" accept="image/*"></div>
+            <div class="form-group"><label>Tu Nombre</label><input type="text" id="input-nombre" placeholder="Escribe tu nombre"></div>
             <div class="form-group">
                 <label>Género</label>
                 <select id="input-genero">
@@ -80,12 +75,7 @@
                     <option value="Mujer">Mujer</option>
                 </select>
             </div>
-
-            <div class="form-group">
-                <label>Edad</label>
-                <input type="number" id="input-edad" placeholder="Ej: 21">
-            </div>
-
+            <div class="form-group"><label>Edad</label><input type="number" id="input-edad" placeholder="Ej: 21"></div>
             <p id="mensaje-guardando" style="color: #1877f2; display: none; text-align: center;">Guardando cambios, espera...</p>
             <button id="btn-guardar-perfil" class="btn-guardar">Guardar Perfil</button>
         </div>
@@ -96,10 +86,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // Importamos updateProfile para guardar la foto oficial
         import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // Importamos setDoc y getDoc para la nueva colección de usuarios
-        import { getFirestore, collection, onSnapshot, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // NUEVO: Agregamos deleteDoc
+        import { getFirestore, collection, onSnapshot, query, where, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
@@ -130,39 +119,26 @@
 
         document.getElementById("btn-salir").addEventListener("click", () => signOut(auth));
 
-        // --- ABRIR Y CERRAR CONFIGURACIÓN ---
         document.getElementById("btn-abrir-config").addEventListener("click", () => {
             const panel = document.getElementById("panel-config");
             panel.style.display = panel.style.display === "block" ? "none" : "block";
         });
 
-        // --- COMPARTIR LA PÁGINA ---
         document.getElementById("btn-compartir").addEventListener("click", async () => {
-            const datosCompartir = {
-                title: 'Wueychat',
-                text: '¡Únete a mi nueva red social Wueychat!',
-                url: 'https://theadrianomx.github.io/wueychat-web/'
-            };
-            
-            // Revisa si el celular soporta el menú de compartir nativo
+            const datosCompartir = { title: 'Wueychat', text: '¡Únete a mi nueva red social Wueychat!', url: 'https://theadrianomx.github.io/wueychat-web/' };
             if (navigator.share) {
-                try {
-                    await navigator.share(datosCompartir);
-                } catch (err) { console.log("Compartir cancelado"); }
+                try { await navigator.share(datosCompartir); } catch (err) { console.log("Compartir cancelado"); }
             } else {
-                // Si está en una PC vieja, copia el enlace
                 navigator.clipboard.writeText(datosCompartir.url);
                 alert("¡Enlace copiado al portapapeles! Envíalo a tus amigos.");
             }
         });
 
-        // --- CARGAR LOS DATOS A LA PANTALLA ---
         async function cargarDatosPerfil(user) {
             const nombreMostrado = user.displayName || "Usuario sin nombre";
             document.getElementById("nombre-perfil-texto").innerText = nombreMostrado;
             document.getElementById("input-nombre").value = nombreMostrado !== "Usuario sin nombre" ? nombreMostrado : "";
 
-            // Manejar la foto de perfil
             if (user.photoURL) {
                 document.getElementById("avatar-letra").style.display = "none";
                 const img = document.getElementById("avatar-img");
@@ -172,12 +148,10 @@
                 document.getElementById("avatar-letra").innerText = nombreMostrado.charAt(0).toUpperCase();
             }
 
-            // Buscar edad y género en la base de datos
             const docUsuario = await getDoc(doc(db, "usuarios", user.email));
             if (docUsuario.exists()) {
                 const datos = docUsuario.data();
                 document.getElementById("datos-perfil").innerText = `${user.email} • ${datos.genero || 'Sin género'} • ${datos.edad ? datos.edad + ' años' : 'Edad desconocida'}`;
-                
                 if(datos.genero) document.getElementById("input-genero").value = datos.genero;
                 if(datos.edad) document.getElementById("input-edad").value = datos.edad;
             } else {
@@ -185,7 +159,6 @@
             }
         }
 
-        // --- GUARDAR LOS CAMBIOS DEL PERFIL ---
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
             const btnGuardar = document.getElementById("btn-guardar-perfil");
             const msjGuardando = document.getElementById("mensaje-guardando");
@@ -198,9 +171,7 @@
             msjGuardando.style.display = "block";
 
             try {
-                let urlFotoFinal = usuarioActual.photoURL; // Mantiene la foto vieja si no sube una nueva
-
-                // Si eligió una foto nueva, la subimos a ImgBB
+                let urlFotoFinal = usuarioActual.photoURL;
                 if (archivoFoto) {
                     const formData = new FormData();
                     formData.append("image", archivoFoto);
@@ -209,30 +180,16 @@
                     if (datosImgbb.success) urlFotoFinal = datosImgbb.data.url;
                 }
 
-                // 1. Actualizamos el Nombre y Foto en Firebase Auth
-                await updateProfile(usuarioActual, {
-                    displayName: nuevoNombre || usuarioActual.displayName,
-                    photoURL: urlFotoFinal
-                });
-
-                // 2. Guardamos la Edad y el Género en la colección "usuarios" de Firestore
-                await setDoc(doc(db, "usuarios", usuarioActual.email), {
-                    genero: nuevoGenero,
-                    edad: nuevaEdad
-                }, { merge: true }); // merge evita borrar otros datos que pudiéramos tener
-
-                // Recargar la pantalla para ver los cambios
+                await updateProfile(usuarioActual, { displayName: nuevoNombre || usuarioActual.displayName, photoURL: urlFotoFinal });
+                await setDoc(doc(db, "usuarios", usuarioActual.email), { genero: nuevoGenero, edad: nuevaEdad }, { merge: true });
                 window.location.reload();
 
             } catch (error) {
-                console.error(error);
-                alert("Error al guardar el perfil.");
-                btnGuardar.disabled = false;
-                msjGuardando.style.display = "none";
+                console.error(error); alert("Error al guardar el perfil.");
+                btnGuardar.disabled = false; msjGuardando.style.display = "none";
             }
         });
 
-        // --- CARGAR TUS PUBLICACIONES ---
         function cargarMisPublicaciones(correoUsuario) {
             const feedDiv = document.getElementById("mis-publicaciones");
             const q = query(collection(db, "publicaciones"), where("autor", "==", correoUsuario));
@@ -242,6 +199,7 @@
                 let misPosts = [];
                 snapshot.forEach((documentoFirebase) => {
                     const post = documentoFirebase.data();
+                    post.id = documentoFirebase.id; // Guardamos el ID secreto para poder borrarlo
                     if (post.fecha) misPosts.push(post);
                 });
 
@@ -255,14 +213,43 @@
                 misPosts.forEach((post) => {
                     const cajaPost = document.createElement("div");
                     cajaPost.classList.add("post");
-                    let htmlContenido = "";
+                    
+                    const fechaObj = post.fecha.toDate();
+                    const fechaTexto = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+
+                    let htmlContenido = `<span class="post-fecha">${fechaTexto}</span>`;
                     if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
                     if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                    
+                    // Botón de eliminar
+                    htmlContenido += `
+                        <div class="contenedor-acciones-post">
+                            <button class="btn-eliminar" data-id="${post.id}">🗑️ Eliminar nota</button>
+                        </div>
+                    `;
+
                     cajaPost.innerHTML = htmlContenido;
                     feedDiv.appendChild(cajaPost);
                 });
             });
         }
+
+        // NUEVO: Escuchar el clic en los botones de eliminar del perfil
+        document.getElementById("mis-publicaciones").addEventListener("click", async (e) => {
+            if (e.target.classList.contains("btn-eliminar")) {
+                const postId = e.target.getAttribute("data-id");
+                
+                if (confirm("¿Estás seguro de que quieres eliminar esta publicación de tu perfil para siempre?")) {
+                    try {
+                        const referenciaNota = doc(db, "publicaciones", postId);
+                        await deleteDoc(referenciaNota);
+                    } catch (error) {
+                        console.error("Error al eliminar:", error);
+                        alert("Hubo un error al intentar eliminar la publicación.");
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
