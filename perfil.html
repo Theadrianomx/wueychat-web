@@ -5,82 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wueychat - Mi Perfil VIP</title>
     <style>
-        /* --- MISMAS VARIABLES DE DISEÑO (Para consistencia) --- */
         :root[data-theme="light"] {
             --fondo: #f0f2f5; --fondo-carta: #ffffff; --texto-principal: #1c1e21; --texto-secundario: #606770;
             --color-primario: #1877f2; --color-hover: #166fe5; --borde: #dddfe2; --sombra: rgba(0, 0, 0, 0.1);
-            --fondo-barra: rgba(255, 255, 255, 0.8);
+            --fondo-barra: rgba(255, 255, 255, 0.85);
         }
         :root[data-theme="dark"] {
             --fondo: #18191a; --fondo-carta: #242526; --texto-principal: #e4e6eb; --texto-secundario: #b0b3b8;
-            --color-primario: #2e89ff; --color-hover: #4e9eff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.3);
-            --fondo-barra: rgba(36, 37, 38, 0.8);
+            --color-primario: #2e89ff; --color-hover: #4e9eff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.4);
+            --fondo-barra: rgba(36, 37, 38, 0.85);
         }
 
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: all 0.3s ease; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
         .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
 
-        /* BARRAS (Glassmorphism) */
-        .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(10px); background-color: var(--fondo-barra); z-index: 100; border: 1px solid var(--borde); transition: all 0.3s ease; }
-        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 4px var(--sombra); }
-        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -1px; }
-        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 4px var(--sombra); }
+        .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border: 1px solid var(--borde); }
+        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 5px var(--sombra); border-bottom: 1px solid var(--borde); }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 26px; font-weight: bold; }
+        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
 
-        /* BOTONES E ÍCONOS */
-        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 10px; border-radius: 50%; transition: all 0.2s ease; }
-        .btn-icono:hover { background-color: rgba(128, 128, 128, 0.1); transform: scale(1.1); }
-        .btn-icono.activo { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 10px; border-radius: 50%; transition: transform 0.2s ease; }
+        .btn-icono:active { transform: scale(0.9); }
         .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
-        .nav-link:hover { color: var(--color-primario); }
-        .btn-eliminar { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 10px 15px; border-radius: 10px; transition: all 0.2s ease; }
-        .btn-eliminar:hover { background-color: rgba(255, 77, 77, 0.1); }
+        .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
 
-        /* ANIMACIONES */
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- CABECERA PERFIL (Diseño VIP) --- */
+        /* --- NUEVA CABECERA CON PORTADA --- */
         .cabecera-perfil {
-            background-color: var(--fondo-carta); padding: 40px 20px; border-radius: 20px;
-            box-shadow: 0 4px 15px var(--sombra); text-align: center; margin-bottom: 25px;
-            border: 1px solid var(--borde); animation: popIn 0.5s ease-out;
+            background-color: var(--fondo-carta); border-radius: 16px;
+            box-shadow: 0 4px 12px var(--sombra); text-align: center; margin-bottom: 25px;
+            border: 1px solid var(--borde); overflow: hidden; position: relative;
         }
-        .contenedor-avatar { position: relative; display: inline-block; margin-bottom: 15px; }
-        .avatar-img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid var(--color-primario); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .avatar-letra { width: 130px; height: 130px; background-color: var(--color-primario); color: white; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 4px solid var(--fondo-carta); }
         
-        .nombre-perfil { font-size: 28px; color: var(--texto-principal); font-weight: 800; margin: 0; letter-spacing: -0.5px; }
-        .datos-extra { color: var(--texto-secundario); font-size: 16px; margin-top: 8px; font-weight: 500; }
-        
-        .botones-accion { margin-top: 25px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-        .btn-compartir { background-color: #42b72a; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px; transition: all 0.2s ease; }
-        .btn-compartir:hover { background-color: #36a420; transform: translateY(-2px); }
-        .btn-editar { background-color: var(--fondo); color: var(--texto-principal); border: 1px solid var(--borde); padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px; transition: all 0.2s ease; }
-        .btn-editar:hover { background-color: var(--borde); }
-        
-        /* --- PANEL CONFIGURACIÓN PREMIUM --- */
-        .panel-configuracion {
-            display: none; background-color: var(--fondo-carta); padding: 25px; border-radius: 20px;
-            box-shadow: 0 4px 15px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde);
-            border-top: 5px solid var(--color-primario); animation: fadeInUp 0.4s ease-out;
+        .portada-img {
+            width: 100%; height: 180px; object-fit: cover; background-color: var(--color-primario);
+            display: block; border-bottom: 1px solid var(--borde);
         }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-weight: bold; color: var(--texto-principal); margin-bottom: 8px; font-size: 15px; }
-        .form-group input, .form-group select {
-            width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 10px;
-            box-sizing: border-box; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal);
-        }
-        .btn-guardar { background-color: var(--color-primario); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-size: 16px; transition: all 0.2s ease; }
-        .btn-guardar:hover { background-color: var(--color-hover); transform: translateY(-2px); }
 
-        /* POSTS DEL PERFIL */
-        .titulo-seccion { color: var(--texto-secundario); font-size: 18px; margin-bottom: 15px; font-weight: bold; padding-left: 5px; }
-        .post { background-color: var(--fondo-carta); padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); animation: fadeInUp 0.4s ease-out; }
-        .post-fecha { font-size: 13px; color: var(--texto-secundario); margin-bottom: 12px; display: block; font-weight: 500; }
-        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.6; margin-bottom: 15px; }
-        .post-imagen { max-width: 100%; border-radius: 12px; margin-top: 5px; }
+        .contenedor-avatar {
+            position: relative; display: inline-block; margin-top: -65px; /* Sube el avatar hacia la portada */
+            margin-bottom: 10px;
+        }
+        .avatar-img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 5px solid var(--fondo-carta); box-shadow: 0 2px 8px var(--sombra); background-color: var(--fondo-carta); }
+        .avatar-letra { width: 130px; height: 130px; background-color: var(--color-primario); color: white; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; border: 5px solid var(--fondo-carta); box-shadow: 0 2px 8px var(--sombra); }
         
-        .contenedor-acciones-post { border-top: 1px solid var(--borde); margin-top: 15px; padding-top: 10px; text-align: right; }
+        .info-usuario { padding: 0 20px 25px 20px; }
+        .nombre-perfil { font-size: 26px; color: var(--texto-principal); font-weight: 800; margin: 0; }
+        
+        /* Estilo para la Biografía */
+        .bio-perfil { color: var(--texto-principal); font-size: 15px; margin: 12px auto; max-width: 80%; line-height: 1.4; font-style: italic; }
+        .datos-extra { color: var(--texto-secundario); font-size: 14px; margin-top: 5px; font-weight: bold; }
+        
+        .botones-accion { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .btn-compartir { background-color: #42b72a; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-editar { background-color: var(--fondo); color: var(--texto-principal); border: 1px solid var(--borde); padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        
+        .panel-configuracion { display: none; background-color: var(--fondo-carta); padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); border-top: 4px solid var(--color-primario); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; color: var(--texto-principal); margin-bottom: 5px; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: var(--fondo); color: var(--texto-principal); font-family: inherit; }
+        .form-group textarea { resize: none; }
+        .btn-guardar { background-color: var(--color-primario); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-size: 16px; }
+
+        .titulo-seccion { color: var(--texto-secundario); font-size: 18px; margin-bottom: 15px; font-weight: bold; }
+        .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); }
+        .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-bottom: 10px; display: block; font-weight: bold; }
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 5px; }
+        .contenedor-acciones-post { border-top: 1px solid var(--borde); margin-top: 12px; padding-top: 10px; text-align: right; }
+        .btn-eliminar { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 5px 10px; }
     </style>
 </head>
 <body>
@@ -92,55 +84,67 @@
 
     <div class="contenedor-principal">
         <div class="cabecera-perfil">
-            <div class="contenedor-avatar">
-                <img id="avatar-img" class="avatar-img" style="display: none;" src="" alt="Avatar">
-                <div class="avatar-letra" id="avatar-letra">U</div>
-            </div>
-            
-            <h2 class="nombre-perfil" id="nombre-perfil-texto">Cargando...</h2>
-            <div class="datos-extra" id="datos-perfil">Cargando datos...</div>
-            
-            <div class="botones-accion">
-                <button id="btn-abrir-config" class="btn-editar">⚙️ Configurar</button>
-                <button id="btn-compartir" class="btn-compartir">🔗 Compartir</button>
+            <img id="portada-visual" class="portada-img" src="" alt="Portada" style="display: none;">
+            <div id="portada-color" class="portada-img"></div>
+
+            <div class="info-usuario">
+                <div class="contenedor-avatar">
+                    <img id="avatar-img" class="avatar-img" style="display: none;" src="" alt="Avatar">
+                    <div class="avatar-letra" id="avatar-letra">U</div>
+                </div>
+                
+                <h2 class="nombre-perfil" id="nombre-perfil-texto">Cargando...</h2>
+                <p class="bio-perfil" id="bio-perfil-texto">Sin biografía aún. ¡Cuéntale al mundo sobre ti!</p>
+                <div class="datos-extra" id="datos-perfil">Cargando datos...</div>
+                
+                <div class="botones-accion">
+                    <button id="btn-abrir-config" class="btn-editar">⚙️ Editar Perfil</button>
+                    <button id="btn-compartir" class="btn-compartir">🔗 Compartir</button>
+                </div>
             </div>
         </div>
 
         <div class="panel-configuracion" id="panel-config">
-            <h3 style="margin-top:0; color: var(--color-primario);">Configura tu perfil VIP</h3>
-            <div class="form-group"><label>Foto de Perfil</label><input type="file" id="input-foto" accept="image/*"></div>
+            <h3 style="margin-top:0; color: var(--color-primario);">Edita tu perfil</h3>
+            
+            <div class="form-group"><label>🖼️ Foto de Portada (Fondo)</label><input type="file" id="input-portada" accept="image/*"></div>
+            <div class="form-group"><label>👤 Foto de Perfil (Circulito)</label><input type="file" id="input-foto" accept="image/*"></div>
+            
             <div class="form-group"><label>Tu Nombre</label><input type="text" id="input-nombre" placeholder="Ej: Adriano"></div>
-            <div class="form-group">
-                <label>Género</label>
-                <select id="input-genero">
-                    <option value="No especificado">Prefiero no decirlo</option>
-                    <option value="Hombre">Hombre</option>
-                    <option value="Mujer">Mujer</option>
-                </select>
+            
+            <div class="form-group"><label>📝 Biografía (Breve)</label><textarea id="input-bio" rows="2" placeholder="Ej: Me encanta jugar y programar bots..."></textarea></div>
+
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Género</label>
+                    <select id="input-genero">
+                        <option value="No especificado">Oculto</option>
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label>Edad</label>
+                    <input type="number" id="input-edad" placeholder="Ej: 20">
+                </div>
             </div>
-            <div class="form-group"><label>Edad</label><input type="number" id="input-edad" placeholder="Ej: 25"></div>
-            <p id="mensaje-guardando" style="color: var(--color-primario); display: none; text-align: center; font-weight: bold;">✨ Guardando los cambios...</p>
-            <button id="btn-guardar-perfil" class="btn-guardar">Guardar Perfil</button>
+            
+            <p id="mensaje-guardando" style="color: var(--color-primario); display: none; text-align: center; font-weight: bold;">Guardando magia...</p>
+            <button id="btn-guardar-perfil" class="btn-guardar">Guardar Cambios</button>
         </div>
 
-        <h3 class="titulo-seccion">Mis Notas</h3>
+        <h3 class="titulo-seccion">Tus Publicaciones</h3>
         <div id="mis-publicaciones"></div>
     </div>
 
     <div class="barra-inferior">
-        <a href="muro.html" class="nav-link">
-            <button class="btn-icono">🏠</button>
-            <span>Inicio</span>
-        </a>
-        <a href="perfil.html" class="nav-link activo">
-            <button class="btn-icono activo">👤</button>
-            <span>Mi Perfil</span>
-        </a>
+        <a href="muro.html" class="nav-link"><button class="btn-icono">🏠</button><span>Inicio</span></a>
+        <a href="perfil.html" class="nav-link activo"><button class="btn-icono activo">👤</button><span>Mi Perfil</span></a>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query, where, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -160,16 +164,16 @@
 
         let usuarioActual = null;
 
-        // --- MODO OSCURO (Consistente) ---
         const btnTheme = document.getElementById('btn-theme');
         const html = document.documentElement;
-        const temaGuardado = localStorage.getItem('theme') || 'light';
+        let temaGuardado = 'light';
+        try { temaGuardado = localStorage.getItem('theme') || 'light'; } catch(e){}
         html.setAttribute('data-theme', temaGuardado);
         btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
         btnTheme.addEventListener('click', () => {
             const nuevoTema = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
             html.setAttribute('data-theme', nuevoTema);
-            localStorage.setItem('theme', nuevoTema);
+            try { localStorage.setItem('theme', nuevoTema); } catch(e){}
             btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙';
         });
 
@@ -183,108 +187,135 @@
             }
         });
 
-        // Configuración y Compartir
         document.getElementById("btn-abrir-config").addEventListener("click", () => {
             const panel = document.getElementById("panel-config");
-            const isVisible = panel.style.display === "block";
-            panel.style.display = isVisible ? "none" : "block";
-            if(!isVisible) panel.scrollIntoView({ behavior: 'smooth' });
+            panel.style.display = panel.style.display === "block" ? "none" : "block";
         });
 
         document.getElementById("btn-compartir").addEventListener("click", async () => {
-            const datos = { title: 'Wueychat', text: '¡Vente a mi red social Wueychat!', url: 'https://theadrianomx.github.io/wueychat-web/' };
+            const datos = { title: 'Wueychat', text: '¡Mira mi perfil en Wueychat!', url: 'https://theadrianomx.github.io/wueychat-web/' };
             if (navigator.share) { try { await navigator.share(datos); } catch (err) {} }
             else { navigator.clipboard.writeText(datos.url); alert("¡Enlace copiado!"); }
         });
 
-        // Cargar Datos
         async function cargarDatosPerfil(user) {
-            const nombreMostrado = user.displayName || "Wuey sin nombre";
+            const nombreMostrado = user.displayName || "Usuario sin nombre";
             document.getElementById("nombre-perfil-texto").innerText = nombreMostrado;
             document.getElementById("input-nombre").value = user.displayName || "";
 
+            // Cargar Avatar
             if (user.photoURL) {
                 document.getElementById("avatar-letra").style.display = "none";
                 const img = document.getElementById("avatar-img");
-                img.src = user.photoURL;
-                img.style.display = "inline-flex";
+                img.src = user.photoURL; img.style.display = "inline-flex";
             } else {
                 document.getElementById("avatar-letra").innerText = nombreMostrado.charAt(0).toUpperCase();
             }
 
+            // Cargar Portada, Bio y otros datos de Firestore
             const docUsuario = await getDoc(doc(db, "usuarios", user.email));
-            const datos = docUsuario.exists() ? docUsuario.data() : {};
-            document.getElementById("datos-perfil").innerText = `${user.email} • ${datos.genero || 'Género ugh'} • ${datos.edad ? datos.edad + ' años' : 'Edad ugh'}`;
-            if(datos.genero) document.getElementById("input-genero").value = datos.genero;
-            if(datos.edad) document.getElementById("input-edad").value = datos.edad;
+            if(docUsuario.exists()) {
+                const datos = docUsuario.data();
+                
+                // Mostrar Bio
+                if(datos.biografia) {
+                    document.getElementById("bio-perfil-texto").innerText = `"${datos.biografia}"`;
+                    document.getElementById("input-bio").value = datos.biografia;
+                }
+                
+                // Mostrar Portada
+                if(datos.portadaUrl) {
+                    document.getElementById("portada-color").style.display = "none";
+                    const portadaVisual = document.getElementById("portada-visual");
+                    portadaVisual.src = datos.portadaUrl;
+                    portadaVisual.style.display = "block";
+                }
+
+                document.getElementById("datos-perfil").innerText = `${user.email} • ${datos.genero || 'Oculto'} • ${datos.edad ? datos.edad + ' años' : 'Edad oculta'}`;
+                if(datos.genero) document.getElementById("input-genero").value = datos.genero;
+                if(datos.edad) document.getElementById("input-edad").value = datos.edad;
+            } else {
+                document.getElementById("datos-perfil").innerText = `${user.email}`;
+            }
         }
 
-        // Guardar Perfil
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
             const btn = document.getElementById("btn-guardar-perfil");
             const msj = document.getElementById("mensaje-guardando");
             const archivoFoto = document.getElementById("input-foto").files[0];
+            const archivoPortada = document.getElementById("input-portada").files[0]; // Nueva Portada
             
-            btn.disabled = true; btn.innerText = "Guardando..."; msj.style.display = "block";
+            btn.disabled = true; msj.style.display = "block";
 
             try {
+                // 1. Subir Avatar si hay uno nuevo
                 let urlFoto = usuarioActual.photoURL;
                 if (archivoFoto) {
-                    const formData = new FormData();
-                    formData.append("image", archivoFoto);
+                    const formData = new FormData(); formData.append("image", archivoFoto);
                     const resp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
                     const datos = await resp.json();
                     if (datos.success) urlFoto = datos.data.url;
                 }
 
+                // 2. Subir Portada si hay una nueva
+                let urlPortadaNueva = null;
+                if (archivoPortada) {
+                    const formPortada = new FormData(); formPortada.append("image", archivoPortada);
+                    const respPort = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formPortada });
+                    const datosPort = await respPort.json();
+                    if (datosPort.success) urlPortadaNueva = datosPort.data.url;
+                }
+
+                // Rescatar datos viejos por si no subió portada nueva
+                const docViejo = await getDoc(doc(db, "usuarios", usuarioActual.email));
+                let portadaFinal = urlPortadaNueva;
+                if(!portadaFinal && docViejo.exists() && docViejo.data().portadaUrl) {
+                    portadaFinal = docViejo.data().portadaUrl; // Mantiene la portada vieja
+                }
+
+                // Guardar Nombre y Avatar en Auth
                 await updateProfile(usuarioActual, { displayName: document.getElementById("input-nombre").value.trim(), photoURL: urlFoto });
-                await setDoc(doc(db, "usuarios", usuarioActual.email), { genero: document.getElementById("input-genero").value, edad: document.getElementById("input-edad").value }, { merge: true });
+                
+                // Guardar Portada, Bio, Edad y Género en Firestore
+                await setDoc(doc(db, "usuarios", usuarioActual.email), { 
+                    genero: document.getElementById("input-genero").value, 
+                    edad: document.getElementById("input-edad").value,
+                    biografia: document.getElementById("input-bio").value.trim(),
+                    portadaUrl: portadaFinal
+                }, { merge: true });
+                
                 window.location.reload();
-            } catch (error) { console.error(error); alert("Error."); }
+            } catch (error) { console.error(error); alert("Error al guardar."); btn.disabled = false; msj.style.display="none"; }
         });
 
-        // Cargar Mis Notas
         function cargarMisPublicaciones(correoUsuario) {
             const feedDiv = document.getElementById("mis-publicaciones");
             const q = query(collection(db, "publicaciones"), where("autor", "==", correoUsuario));
 
             onSnapshot(q, (snapshot) => {
-                feedDiv.innerHTML = "";
-                let misPosts = [];
-                snapshot.forEach((doc) => {
-                    const p = doc.data(); p.id = doc.id;
-                    if (p.fecha) misPosts.push(p);
-                });
+                feedDiv.innerHTML = ""; let misPosts = [];
+                snapshot.forEach((doc) => { const p = doc.data(); p.id = doc.id; if (p.fecha) misPosts.push(p); });
                 misPosts.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
                 
                 if(misPosts.length === 0) { feedDiv.innerHTML = "<p style='text-align: center; color: var(--texto-secundario);'>Aún no tienes notas.</p>"; return; }
 
                 misPosts.forEach((post) => {
                     const caja = document.createElement("div"); caja.classList.add("post");
-                    const fObj = post.fecha.toDate();
-                    const fText = fObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-
+                    const fText = post.fecha.toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
                     let html = `<span class="post-fecha">${fText}</span>`;
                     if (post.texto) html += `<div class="post-texto">${post.texto}</div>`;
-                    if (post.imagenUrl) html += `<img src="${post.imagenUrl}" class="post-imagen" loading="lazy">`;
-                    html += `<div class="contenedor-acciones-post"><button class="btn-eliminar" data-id="${post.id}">🗑️ Borrar nota</button></div>`;
-
-                    caja.innerHTML = html;
-                    feedDiv.appendChild(caja);
+                    if (post.imagenUrl) html += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                    html += `<div class="contenedor-acciones-post"><button class="btn-eliminar" data-id="${post.id}">🗑️ Borrar</button></div>`;
+                    caja.innerHTML = html; feedDiv.appendChild(caja);
                 });
             });
         }
 
-        // Eliminar Nota
         document.getElementById("mis-publicaciones").addEventListener("click", async (e) => {
             if (e.target.classList.contains("btn-eliminar")) {
                 const postId = e.target.getAttribute("data-id");
-                if (confirm("¿Borrar esta nota para siempre de tu perfil?")) {
-                    try {
-                        const card = e.target.closest('.post');
-                        card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 })
-                            .onfinish = async () => { await deleteDoc(doc(db, "publicaciones", postId)); };
-                    } catch (error) { console.error(error); }
+                if (confirm("¿Borrar esta nota para siempre?")) {
+                    try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (error) { console.error(error); }
                 }
             }
         });
