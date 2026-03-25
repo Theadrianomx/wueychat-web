@@ -5,77 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wueychat - Inicio</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .contenedor {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 320px;
-        }
-        h1 {
-            color: #1877f2;
-            margin-bottom: 5px;
-            font-size: 36px;
-        }
-        p.subtitulo {
-            color: #606770;
-            margin-bottom: 20px;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            background-color: #1877f2; /* Azul Facebook */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .contenedor { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center; width: 320px; }
+        h1 { color: #1877f2; margin-bottom: 5px; font-size: 36px; }
+        p.subtitulo { color: #606770; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn-login { width: 100%; padding: 12px; margin-top: 10px; background-color: #1877f2; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
         .btn-login:hover { background-color: #166fe5; }
-        
-        .linea-separadora {
-            border-bottom: 1px solid #dadde1;
-            margin: 20px 0;
-        }
-
-        .btn-registro {
-            padding: 12px 20px;
-            background-color: #42b72a; /* Verde */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .linea-separadora { border-bottom: 1px solid #dadde1; margin: 20px 0; }
+        .btn-registro { padding: 12px 20px; background-color: #42b72a; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-registro:hover { background-color: #36a420; }
-
-        #mensaje {
-            margin-top: 15px;
-            font-size: 14px;
-            font-weight: bold;
-        }
+        #mensaje { margin-top: 15px; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -84,23 +24,21 @@
         <h1>Wueychat</h1>
         <p class="subtitulo">Conéctate con tus amigos.</p>
         
+        <input type="text" id="nombre" placeholder="Tu Nombre o Apodo (Solo registro)">
         <input type="email" id="email" placeholder="Correo electrónico" required>
         <input type="password" id="password" placeholder="Contraseña" required>
         
         <button id="btn-login" class="btn-login">Iniciar sesión</button>
-        
         <p id="mensaje"></p>
-
         <div class="linea-separadora"></div>
-
         <button id="btn-registrar" class="btn-registro">Crear cuenta nueva</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        // NUEVO: Importamos updateProfile
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // Tu configuración de Wueychat
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
             authDomain: "wueychat.firebaseapp.com",
@@ -117,17 +55,19 @@
         const btnLogin = document.getElementById("btn-login");
         const btnRegistrar = document.getElementById("btn-registrar");
         const mensajeDiv = document.getElementById("mensaje");
+        const inputNombre = document.getElementById("nombre");
         const inputEmail = document.getElementById("email");
         const inputPassword = document.getElementById("password");
 
-        // --- FUNCIÓN PARA REGISTRAR ---
+        // --- REGISTRAR ---
         btnRegistrar.addEventListener("click", () => {
-            const email = inputEmail.value;
+            const nombre = inputNombre.value.trim();
+            const email = inputEmail.value.trim();
             const password = inputPassword.value;
 
-            if(!email || !password) {
+            if(!email || !password || !nombre) {
                 mensajeDiv.style.color = "red";
-                mensajeDiv.innerText = "Llena los campos para registrarte.";
+                mensajeDiv.innerText = "Llena todos los campos (incluyendo tu nombre).";
                 return;
             }
 
@@ -135,29 +75,29 @@
             mensajeDiv.innerText = "Creando cuenta...";
 
             createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    // Firebase inicia sesión automáticamente al registrarse
+                .then(async (userCredential) => {
+                    // NUEVO: Le pegamos el nombre al perfil recién creado
+                    const user = userCredential.user;
+                    await updateProfile(user, { displayName: nombre });
+
                     mensajeDiv.style.color = "green";
                     mensajeDiv.innerText = "¡Cuenta creada! Entrando al muro...";
-                    // Esperamos 1 segundo y medio y lo enviamos al muro
-                    setTimeout(() => {
-                        window.location.href = "muro.html";
-                    }, 1500);
+                    setTimeout(() => { window.location.href = "muro.html"; }, 1500);
                 })
                 .catch((error) => {
                     mensajeDiv.style.color = "red";
-                    mensajeDiv.innerText = "Error al crear cuenta: " + error.message;
+                    mensajeDiv.innerText = "Error: " + error.message;
                 });
         });
 
-        // --- FUNCIÓN PARA INICIAR SESIÓN ---
+        // --- INICIAR SESIÓN ---
         btnLogin.addEventListener("click", () => {
-            const email = inputEmail.value;
+            const email = inputEmail.value.trim();
             const password = inputPassword.value;
 
             if(!email || !password) {
                 mensajeDiv.style.color = "red";
-                mensajeDiv.innerText = "Ingresa tu correo y contraseña.";
+                mensajeDiv.innerText = "Ingresa correo y contraseña para entrar.";
                 return;
             }
 
@@ -165,13 +105,10 @@
             mensajeDiv.innerText = "Entrando...";
 
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    // ¡Inicio de sesión exitoso! Lo enviamos al muro:
-                    mensajeDiv.style.color = "green";
-                    mensajeDiv.innerText = "¡Conectado! Redirigiendo...";
+                .then(() => {
                     window.location.href = "muro.html";
                 })
-                .catch((error) => {
+                .catch(() => {
                     mensajeDiv.style.color = "red";
                     mensajeDiv.innerText = "Correo o contraseña incorrectos.";
                 });
