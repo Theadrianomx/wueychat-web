@@ -5,86 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wueychat - Muro</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
         .contenedor-principal { max-width: 600px; margin: 0 auto; }
-        .navbar {
-            background-color: white; padding: 15px 20px; display: flex;
-            justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px;
-        }
+        .navbar { background-color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px; }
         .navbar h1 { color: #1877f2; margin: 0; font-size: 24px; }
         .enlaces-nav { display: flex; align-items: center; }
         .enlaces-nav a { color: #1877f2; text-decoration: none; font-weight: bold; margin-right: 15px; }
         .enlaces-nav a:hover { text-decoration: underline; }
-        .btn-salir {
-            background-color: #e4e6eb; border: none; padding: 8px 15px;
-            border-radius: 6px; cursor: pointer; font-weight: bold;
-        }
+        .btn-salir { background-color: #e4e6eb; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-salir:hover { background-color: #d8dadf; }
-        .contenedor-publicacion {
-            background-color: white; padding: 20px; border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;
-        }
-        textarea {
-            width: 100%; padding: 10px; border: 1px solid #ccc;
-            border-radius: 6px; box-sizing: border-box; resize: none; font-size: 16px;
-        }
+        .contenedor-publicacion { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: none; font-size: 16px; }
         input[type="file"] { margin-top: 10px; margin-bottom: 10px; font-size: 14px; }
-        .btn-publicar {
-            background-color: #1877f2; color: white; border: none;
-            padding: 10px 20px; border-radius: 6px; font-weight: bold;
-            cursor: pointer; width: 100%;
-        }
+        .btn-publicar { background-color: #1877f2; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
         .btn-publicar:hover { background-color: #166fe5; }
         
-        .post {
-            background-color: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px;
-        }
+        .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .post-autor { font-weight: bold; color: #1c1e21; margin-bottom: 8px; font-size: 14px; }
         .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
         .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
 
-        /* --- ESTILOS NUEVOS PARA LAS REACCIONES --- */
-        .contenedor-reacciones {
-            position: relative;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #dadde1;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .btn-reaccionar {
-            background: none; border: none; color: #606770; font-weight: bold;
-            cursor: pointer; padding: 8px 12px; border-radius: 4px; font-size: 14px;
-        }
+        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 10px; border-top: 1px solid #dadde1; display: flex; align-items: center; gap: 15px; }
+        .btn-reaccionar { background: none; border: none; color: #606770; font-weight: bold; cursor: pointer; padding: 8px 12px; border-radius: 4px; font-size: 14px; }
         .btn-reaccionar:hover { background-color: #f0f2f5; }
         
-        /* El menú tipo burbuja oculto */
-        .menu-emojis {
-            display: none;
-            position: absolute;
-            bottom: 40px; /* Sale hacia arriba */
-            left: 0;
-            background: white;
-            padding: 5px 10px;
-            border-radius: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            gap: 10px;
-            z-index: 10;
-        }
-        /* Al pasar el mouse por la zona, se muestra el menú */
+        .menu-emojis { display: none; position: absolute; bottom: 40px; left: 0; background: white; padding: 5px 10px; border-radius: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); gap: 10px; z-index: 10; }
         .contenedor-reacciones:hover .menu-emojis { display: flex; }
-        
-        .emoji {
-            cursor: pointer; font-size: 24px; transition: transform 0.2s;
-        }
+        .emoji { cursor: pointer; font-size: 24px; transition: transform 0.2s; }
         .emoji:hover { transform: scale(1.3) translateY(-5px); }
         .lista-reacciones { font-size: 15px; color: #606770; }
     </style>
@@ -114,7 +61,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // Importamos 'doc' y 'updateDoc' para modificar notas existentes
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -133,14 +79,14 @@
         const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f";
 
         let usuarioActual = null;
-        let llaveUsuarioActual = null; // Guardamos el correo adaptado para Firebase
+        let llaveUsuarioActual = null;
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 usuarioActual = user;
-                // Firebase no acepta puntos en los nombres de variables internas, los cambiamos por guiones bajos
                 llaveUsuarioActual = user.email.replace(/\./g, '_'); 
-                document.getElementById("correo-usuario").innerText = user.email;
+                // Mostramos el Nombre en la barra superior (si no tiene, muestra el correo)
+                document.getElementById("correo-usuario").innerText = user.displayName || user.email;
                 cargarPublicaciones();
             } else {
                 window.location.href = "index.html";
@@ -170,24 +116,20 @@
                     const formData = new FormData();
                     formData.append("image", archivoImagen);
 
-                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                        method: "POST", body: formData
-                    });
-
+                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
                     const datosImgbb = await respuestaImgbb.json();
                     if (datosImgbb.success) urlImagenFinal = datosImgbb.data.url;
                 }
 
-                // Agregamos un diccionario vacío 'reacciones' al crear la nota
-                                await addDoc(collection(db, "publicaciones"), {
+                // Guardamos el Nombre y el Correo en la base de datos
+                await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
-                    autorNombre: usuarioActual.displayName || "Usuario sin nombre", // NUEVO
+                    autorNombre: usuarioActual.displayName || "Usuario sin nombre", 
                     texto: texto,
                     imagenUrl: urlImagenFinal,
                     fecha: serverTimestamp(),
                     reacciones: {} 
                 });
-
 
                 inputTexto.value = ""; inputImagen.value = "";
                 btnPublicar.disabled = false; mensajePublicando.style.display = "none";
@@ -197,7 +139,6 @@
             }
         });
 
-        // --- SISTEMA DE DIBUJAR Y CONTAR REACCIONES ---
         function cargarPublicaciones() {
             const feedDiv = document.getElementById("feed");
             const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
@@ -207,40 +148,37 @@
                 
                 snapshot.forEach((documentoFirebase) => {
                     const post = documentoFirebase.data();
-                    const postId = documentoFirebase.id; // ¡La clave para actualizar!
+                    const postId = documentoFirebase.id; 
                     
                     if (post.fecha) {
                         const cajaPost = document.createElement("div");
                         cajaPost.classList.add("post");
                         
-                        let htmlContenido = `<div class="post-autor">${post.autor}</div>`;
+                        // Elegimos mostrar el Nombre. Si es una cuenta vieja que no lo tiene, mostramos el correo.
+                        const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor;
+                        
+                        let htmlContenido = `<div class="post-autor">${nombreMostrar}</div>`;
                         if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
                         if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
 
-                        // Analizamos las reacciones
                         const reacciones = post.reacciones || {};
                         const conteoEmojis = {};
                         let miReaccionActual = null;
 
                         for (const [correoModificado, emoji] of Object.entries(reacciones)) {
-                            // Sumamos +1 al emoji
                             conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1;
-                            // Revisamos si yo ya reaccioné
                             if (correoModificado === llaveUsuarioActual) miReaccionActual = emoji;
                         }
 
-                        // Convertimos el conteo a texto (ej. "👍 2 ❤️ 1")
                         const textoReacciones = Object.entries(conteoEmojis)
                             .map(([e, total]) => `${e} ${total}`)
                             .join('   ');
 
-                        // Agregamos el HTML de la barra de reacciones
                         htmlContenido += `
                             <div class="contenedor-reacciones">
                                 <button class="btn-reaccionar">
                                     ${miReaccionActual ? miReaccionActual : '👍'} Reaccionar
                                 </button>
-                                
                                 <div class="menu-emojis">
                                     <span class="emoji" data-id="${postId}" data-emoji="👍">👍</span>
                                     <span class="emoji" data-id="${postId}" data-emoji="❤️">❤️</span>
@@ -248,7 +186,6 @@
                                     <span class="emoji" data-id="${postId}" data-emoji="😮">😮</span>
                                     <span class="emoji" data-id="${postId}" data-emoji="😢">😢</span>
                                 </div>
-                                
                                 <div class="lista-reacciones">${textoReacciones}</div>
                             </div>
                         `;
@@ -260,28 +197,16 @@
             });
         }
 
-        // --- ESCUCHAR CLICS EN LOS EMOJIS ---
         document.getElementById("feed").addEventListener("click", async (e) => {
-            // Si el elemento clickeado tiene la clase 'emoji'...
             if (e.target.classList.contains("emoji")) {
                 const postId = e.target.getAttribute("data-id");
                 const emojiElegido = e.target.getAttribute("data-emoji");
-                
-                // Le decimos a Firebase: "Busca esta nota específica"
                 const referenciaNota = doc(db, "publicaciones", postId);
-                
-                // Actualizamos SOLO mi reacción dentro de la nota
                 const actualizacion = {};
                 actualizacion[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
-
-                try {
-                    await updateDoc(referenciaNota, actualizacion);
-                } catch (error) {
-                    console.error("Error al reaccionar:", error);
-                }
+                try { await updateDoc(referenciaNota, actualizacion); } catch (error) { console.error("Error al reaccionar:", error); }
             }
         });
-
     </script>
 </body>
 </html>
