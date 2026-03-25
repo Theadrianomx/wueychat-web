@@ -30,6 +30,20 @@
             margin: 0;
             font-size: 24px;
         }
+        /* Nuevo estilo para los enlaces de navegación */
+        .enlaces-nav {
+            display: flex;
+            align-items: center;
+        }
+        .enlaces-nav a {
+            color: #1877f2;
+            text-decoration: none;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .enlaces-nav a:hover {
+            text-decoration: underline;
+        }
         .btn-salir {
             background-color: #e4e6eb;
             border: none;
@@ -55,7 +69,6 @@
             resize: none;
             font-size: 16px;
         }
-        /* Nuevo estilo para el botón de subir foto */
         input[type="file"] {
             margin-top: 10px;
             margin-bottom: 10px;
@@ -92,7 +105,6 @@
             line-height: 1.5;
             margin-bottom: 10px;
         }
-        /* Estilo para que las imágenes del muro se vean bien */
         .post-imagen {
             max-width: 100%;
             border-radius: 8px;
@@ -105,17 +117,16 @@
     <div class="contenedor-principal">
         <div class="navbar">
             <h1>Wueychat</h1>
-            <div>
+            <div class="enlaces-nav">
                 <span id="correo-usuario" style="margin-right: 15px; color: #606770;">Cargando...</span>
+                <a href="perfil.html">Mi Perfil</a>
                 <button id="btn-salir" class="btn-salir">Salir</button>
             </div>
         </div>
 
         <div class="contenedor-publicacion">
             <textarea id="texto-publicacion" rows="3" placeholder="¿Qué estás pensando?"></textarea>
-            
             <input type="file" id="imagen-publicacion" accept="image/*">
-            
             <button id="btn-publicar" class="btn-publicar">Publicar nota</button>
             <p id="mensaje-publicando" style="color: #1877f2; font-size: 14px; display: none; text-align: center;">Subiendo publicación, espera un momento...</p>
         </div>
@@ -142,7 +153,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Tu llave de ImgBB
         const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f";
 
         let usuarioActual = null;
@@ -172,17 +182,14 @@
             const texto = inputTexto.value.trim();
             const archivoImagen = inputImagen.files[0];
 
-            // Si no hay texto ni imagen, no hacemos nada
             if (texto === "" && !archivoImagen) return;
 
-            // Mostramos un mensaje de espera porque las fotos tardan un poquito en subir
             btnPublicar.disabled = true;
             mensajePublicando.style.display = "block";
 
             let urlImagenFinal = null;
 
             try {
-                // Si el usuario eligió una imagen, primero la mandamos a ImgBB
                 if (archivoImagen) {
                     const formData = new FormData();
                     formData.append("image", archivoImagen);
@@ -195,7 +202,7 @@
                     const datosImgbb = await respuestaImgbb.json();
                     
                     if (datosImgbb.success) {
-                        urlImagenFinal = datosImgbb.data.url; // Rescatamos el enlace directo
+                        urlImagenFinal = datosImgbb.data.url;
                     } else {
                         alert("Error al subir la imagen a ImgBB.");
                         btnPublicar.disabled = false;
@@ -204,15 +211,13 @@
                     }
                 }
 
-                // Ahora sí, guardamos el texto y el enlace de la imagen en Firebase
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
                     texto: texto,
-                    imagenUrl: urlImagenFinal, // Puede ser el enlace o null si no subió foto
+                    imagenUrl: urlImagenFinal,
                     fecha: serverTimestamp()
                 });
 
-                // Limpiamos todo para la siguiente publicación
                 inputTexto.value = "";
                 inputImagen.value = "";
                 btnPublicar.disabled = false;
@@ -240,17 +245,12 @@
                         const cajaPost = document.createElement("div");
                         cajaPost.classList.add("post");
                         
-                        // Armamos el HTML básico de la publicación
-                        let htmlContenido = `
-                            <div class="post-autor">${post.autor}</div>
-                        `;
+                        let htmlContenido = `<div class="post-autor">${post.autor}</div>`;
 
-                        // Si hay texto, lo agregamos
                         if (post.texto) {
                             htmlContenido += `<div class="post-texto">${post.texto}</div>`;
                         }
 
-                        // Si hay imagen, la agregamos
                         if (post.imagenUrl) {
                             htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen" alt="Imagen subida">`;
                         }
