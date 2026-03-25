@@ -179,13 +179,15 @@
                 }
 
                 // Agregamos un diccionario vacío 'reacciones' al crear la nota
-                await addDoc(collection(db, "publicaciones"), {
+                                await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email,
+                    autorNombre: usuarioActual.displayName || "Usuario sin nombre", // NUEVO
                     texto: texto,
                     imagenUrl: urlImagenFinal,
                     fecha: serverTimestamp(),
                     reacciones: {} 
                 });
+
 
                 inputTexto.value = ""; inputImagen.value = "";
                 btnPublicar.disabled = false; mensajePublicando.style.display = "none";
