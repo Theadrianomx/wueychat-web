@@ -1,41 +1,86 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wueychat - Perfil de Usuario</title>
+    <title>Wueychat - Perfil Público</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .contenedor-principal { max-width: 600px; margin: 0 auto; }
-        .navbar { background-color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 20px; }
-        .navbar h1 { color: #1877f2; margin: 0; font-size: 24px; }
-        .enlaces-nav a { color: #1877f2; text-decoration: none; font-weight: bold; margin-right: 15px; }
+        /* --- MISMOS COLORES PREMIUM --- */
+        :root[data-theme="light"] {
+            --fondo: #f0f2f5; --fondo-carta: #ffffff; --texto-principal: #1c1e21; --texto-secundario: #606770;
+            --color-primario: #1877f2; --color-hover: #166fe5; --borde: #dddfe2; --sombra: rgba(0, 0, 0, 0.1);
+            --fondo-barra: rgba(255, 255, 255, 0.85);
+        }
+        :root[data-theme="dark"] {
+            --fondo: #18191a; --fondo-carta: #242526; --texto-principal: #e4e6eb; --texto-secundario: #b0b3b8;
+            --color-primario: #2e89ff; --color-hover: #4e9eff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.4);
+            --fondo-barra: rgba(36, 37, 38, 0.85);
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; }
+        .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+
+        .barra-superior { position: fixed; top: 0; left: 0; width: 100%; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; box-shadow: 0 2px 5px var(--sombra); border-bottom: 1px solid var(--borde); }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 24px; font-weight: bold; }
+        .btn-volver { color: var(--color-primario); text-decoration: none; font-weight: bold; font-size: 16px; }
+
+        /* --- CABECERA VIP (Igual que el perfil personal) --- */
+        .cabecera-perfil { background-color: var(--fondo-carta); border-radius: 16px; box-shadow: 0 4px 12px var(--sombra); text-align: center; margin-bottom: 25px; border: 1px solid var(--borde); overflow: hidden; position: relative; }
+        .portada-img { width: 100%; height: 180px; object-fit: cover; background-color: var(--color-primario); display: block; border-bottom: 1px solid var(--borde); }
+        .contenedor-avatar { position: relative; display: inline-block; margin-top: -65px; margin-bottom: 10px; }
+        .avatar-img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 5px solid var(--fondo-carta); box-shadow: 0 2px 8px var(--sombra); background-color: var(--fondo-carta); }
+        .avatar-letra { width: 130px; height: 130px; background-color: var(--color-primario); color: white; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; border: 5px solid var(--fondo-carta); box-shadow: 0 2px 8px var(--sombra); }
         
-        .cabecera-perfil { background-color: white; padding: 40px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
-        .avatar-temporal { width: 120px; height: 120px; background-color: #42b72a; color: white; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 50px; font-weight: bold; margin-bottom: 10px; }
-        .nombre-perfil { font-size: 24px; color: #1c1e21; font-weight: bold; margin: 0; }
-        .datos-extra { color: #606770; font-size: 15px; margin-top: 8px; }
+        .info-usuario { padding: 0 20px 25px 20px; }
+        .nombre-perfil { font-size: 26px; color: var(--texto-principal); font-weight: 800; margin: 0; }
+        .bio-perfil { color: var(--texto-principal); font-size: 15px; margin: 12px auto; max-width: 80%; line-height: 1.4; font-style: italic; }
+        .datos-extra { color: var(--texto-secundario); font-size: 14px; margin-top: 5px; font-weight: bold; }
+
+        /* --- NUEVO: ESTADÍSTICAS Y BOTÓN SEGUIR --- */
+        .estadisticas-seguidores { display: flex; justify-content: center; gap: 20px; margin: 15px 0; font-size: 16px; color: var(--texto-principal); }
+        .estadisticas-seguidores span { font-weight: bold; color: var(--color-primario); }
         
-        .titulo-seccion { color: #606770; font-size: 18px; margin-bottom: 10px; }
-        .post { background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .post-texto { color: #050505; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }
-        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        .btn-seguir { background-color: var(--color-primario); color: white; border: none; padding: 10px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: all 0.2s; margin-top: 5px; }
+        .btn-seguir.siguiendo { background-color: var(--fondo); color: var(--texto-principal); border: 1px solid var(--borde); }
+        .btn-seguir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* POSTS */
+        .titulo-seccion { color: var(--texto-secundario); font-size: 18px; margin-bottom: 15px; font-weight: bold; }
+        .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); }
+        .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-bottom: 10px; display: block; font-weight: bold; }
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="contenedor-principal">
-        <div class="navbar">
-            <h1>Wueychat</h1>
-            <div class="enlaces-nav">
-                <a href="muro.html">← Volver al Muro</a>
-            </div>
-        </div>
+    <div class="barra-superior">
+        <h1>Wueychat</h1>
+        <a href="muro.html" class="btn-volver">← Muro</a>
+    </div>
 
+    <div class="contenedor-principal">
         <div class="cabecera-perfil">
-            <div class="avatar-temporal" id="avatar-letra">?</div>
-            <h2 class="nombre-perfil" id="nombre-perfil-texto">Cargando perfil...</h2>
-            <div class="datos-extra" id="datos-perfil">Buscando datos...</div>
+            <img id="portada-visual" class="portada-img" src="" style="display: none;">
+            <div id="portada-color" class="portada-img"></div>
+
+            <div class="info-usuario">
+                <div class="contenedor-avatar">
+                    <img id="avatar-img" class="avatar-img" style="display: none;" src="">
+                    <div class="avatar-letra" id="avatar-letra">?</div>
+                </div>
+                
+                <h2 class="nombre-perfil" id="nombre-perfil-texto">Cargando...</h2>
+                <p class="bio-perfil" id="bio-perfil-texto"></p>
+                <div class="datos-extra" id="datos-perfil">Buscando datos...</div>
+                
+                <div class="estadisticas-seguidores">
+                    <div><span id="contador-seguidores">0</span> Seguidores</div>
+                    <div><span id="contador-seguidos">0</span> Seguidos</div>
+                </div>
+
+                <button id="btn-seguir" class="btn-seguir" style="display: none;">Seguir</button>
+            </div>
         </div>
 
         <h3 class="titulo-seccion">Publicaciones</h3>
@@ -45,7 +90,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // Importamos arrayUnion, arrayRemove y setDoc para la magia de seguir
+        import { getFirestore, collection, onSnapshot, query, where, getDoc, doc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
@@ -65,70 +111,139 @@
         const urlParams = new URLSearchParams(window.location.search);
         const correoVisitado = urlParams.get('usuario');
 
-        // Si entras a esta página sin un usuario en el enlace, te regresa al muro
-        if (!correoVisitado) {
-            window.location.href = "muro.html";
-        }
+        if (!correoVisitado) { window.location.href = "muro.html"; }
 
-        // Primero revisamos que estés conectado
+        // MODO OSCURO AUTOMÁTICO
+        const html = document.documentElement;
+        try { html.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); } catch(e){}
+
+        let usuarioActual = null;
+        let loEstoySiguiendo = false;
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                usuarioActual = user;
                 cargarPerfilPublico();
+                escucharSeguidores();
             } else {
                 window.location.href = "index.html";
             }
         });
 
         async function cargarPerfilPublico() {
-            // Ponemos la inicial del correo como avatar
             document.getElementById("avatar-letra").innerText = correoVisitado.charAt(0).toUpperCase();
-            document.getElementById("nombre-perfil-texto").innerText = correoVisitado; // Por si no tiene nombre
+            document.getElementById("nombre-perfil-texto").innerText = correoVisitado;
 
-            // 1. BUSCAR SUS DATOS (EDAD Y GÉNERO)
+            // 1. BUSCAR SUS DATOS (Portada, Bio, Edad)
             const docUsuario = await getDoc(doc(db, "usuarios", correoVisitado));
             if (docUsuario.exists()) {
                 const datos = docUsuario.data();
-                document.getElementById("datos-perfil").innerText = `${datos.genero || 'Sin género'} • ${datos.edad ? datos.edad + ' años' : 'Edad desconocida'}`;
-            } else {
-                document.getElementById("datos-perfil").innerText = "Usuario de Wueychat";
+                
+                if(datos.biografia) document.getElementById("bio-perfil-texto").innerText = `"${datos.biografia}"`;
+                if(datos.portadaUrl) {
+                    document.getElementById("portada-color").style.display = "none";
+                    document.getElementById("portada-visual").src = datos.portadaUrl;
+                    document.getElementById("portada-visual").style.display = "block";
+                }
+                document.getElementById("datos-perfil").innerText = `${datos.genero || 'Oculto'} • ${datos.edad ? datos.edad + ' años' : 'Edad oculta'}`;
             }
 
-            // 2. BUSCAR SUS PUBLICACIONES
+            // 2. BUSCAR SUS PUBLICACIONES Y SU FOTO
             const feedDiv = document.getElementById("publicaciones-usuario");
             const q = query(collection(db, "publicaciones"), where("autor", "==", correoVisitado));
 
             onSnapshot(q, (snapshot) => {
-                feedDiv.innerHTML = "";
-                let susPosts = [];
-                
-                snapshot.forEach((documentoFirebase) => {
-                    const post = documentoFirebase.data();
-                    if (post.fecha) susPosts.push(post);
-                });
+                feedDiv.innerHTML = ""; let susPosts = [];
+                snapshot.forEach((d) => { const p = d.data(); if (p.fecha) susPosts.push(p); });
 
-                // Si tiene publicaciones, rescatamos su nombre oficial de una de ellas
-                if (susPosts.length > 0 && susPosts[0].autorNombre) {
-                    document.getElementById("nombre-perfil-texto").innerText = susPosts[0].autorNombre;
+                if (susPosts.length > 0) {
+                    if(susPosts[0].autorNombre) document.getElementById("nombre-perfil-texto").innerText = susPosts[0].autorNombre;
+                    if(susPosts[0].autorFoto) {
+                        document.getElementById("avatar-letra").style.display = "none";
+                        document.getElementById("avatar-img").src = susPosts[0].autorFoto;
+                        document.getElementById("avatar-img").style.display = "inline-flex";
+                    }
                 }
 
                 susPosts.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
                 
-                if(susPosts.length === 0) {
-                    feedDiv.innerHTML = "<p style='text-align: center; color: #606770;'>Este usuario aún no tiene publicaciones.</p>";
-                    return;
-                }
+                if(susPosts.length === 0) { feedDiv.innerHTML = "<p style='text-align: center; color: var(--texto-secundario);'>No hay publicaciones.</p>"; return; }
 
                 susPosts.forEach((post) => {
-                    const cajaPost = document.createElement("div");
-                    cajaPost.classList.add("post");
-                    let htmlContenido = "";
+                    const cajaPost = document.createElement("div"); cajaPost.classList.add("post");
+                    let htmlContenido = `<span class="post-fecha">${post.fecha.toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>`;
                     if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
                     if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
-                    cajaPost.innerHTML = htmlContenido;
-                    feedDiv.appendChild(cajaPost);
+                    cajaPost.innerHTML = htmlContenido; feedDiv.appendChild(cajaPost);
                 });
             });
         }
+
+        // --- NUEVA LÓGICA: ESCUCHAR SEGUIDORES EN TIEMPO REAL ---
+        function escucharSeguidores() {
+            const btnSeguir = document.getElementById("btn-seguir");
+
+            // Si estoy visitando mi propio perfil público, escondo el botón
+            if (usuarioActual.email === correoVisitado) {
+                btnSeguir.style.display = "none";
+            } else {
+                btnSeguir.style.display = "inline-block";
+            }
+
+            // Escuchar el documento del usuario que estamos visitando
+            onSnapshot(doc(db, "usuarios", correoVisitado), (docSnap) => {
+                let seguidores = [];
+                let seguidos = [];
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.seguidores) seguidores = data.seguidores;
+                    if(data.siguiendo) seguidos = data.siguiendo;
+                }
+
+                // Actualizar numeritos en la pantalla
+                document.getElementById("contador-seguidores").innerText = seguidores.length;
+                document.getElementById("contador-seguidos").innerText = seguidos.length;
+
+                // Revisar si mi correo está en su lista de seguidores
+                loEstoySiguiendo = seguidores.includes(usuarioActual.email);
+
+                if (loEstoySiguiendo) {
+                    btnSeguir.innerText = "Siguiendo ✓";
+                    btnSeguir.classList.add("siguiendo");
+                } else {
+                    btnSeguir.innerText = "Seguir";
+                    btnSeguir.classList.remove("siguiendo");
+                }
+            });
+        }
+
+        // --- ACCIÓN: CLIC EN EL BOTÓN SEGUIR ---
+        document.getElementById("btn-seguir").addEventListener("click", async () => {
+            const btnSeguir = document.getElementById("btn-seguir");
+            btnSeguir.disabled = true; // Evitar doble clic rápido
+
+            const refVisitado = doc(db, "usuarios", correoVisitado);
+            const refMio = doc(db, "usuarios", usuarioActual.email);
+
+            try {
+                if (loEstoySiguiendo) {
+                    // Acción: Dejar de seguir (arrayRemove)
+                    await setDoc(refVisitado, { seguidores: arrayRemove(usuarioActual.email) }, { merge: true });
+                    await setDoc(refMio, { siguiendo: arrayRemove(correoVisitado) }, { merge: true });
+                } else {
+                    // Acción: Empezar a seguir (arrayUnion)
+                    await setDoc(refVisitado, { seguidores: arrayUnion(usuarioActual.email) }, { merge: true });
+                    await setDoc(refMio, { siguiendo: arrayUnion(correoVisitado) }, { merge: true });
+                }
+            } catch (error) {
+                console.error("Error al seguir/dejar de seguir:", error);
+                alert("Hubo un error de conexión.");
+            } finally {
+                btnSeguir.disabled = false;
+            }
+        });
+
     </script>
 </body>
 </html>
