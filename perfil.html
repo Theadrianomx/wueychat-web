@@ -19,6 +19,7 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
         .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
 
+        /* BARRAS */
         .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border: 1px solid var(--borde); }
         .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 5px var(--sombra); border-bottom: 1px solid var(--borde); }
         .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 26px; font-weight: bold; }
@@ -28,6 +29,15 @@
         .btn-icono:active { transform: scale(0.9); }
         .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
         .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+
+        /* NUEVO: CAMPANITA EN EL PERFIL */
+        .contenedor-campanita { position: relative; }
+        .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
+        .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; text-align: left; }
+        .noti-item { padding: 12px; border-bottom: 1px solid var(--borde); font-size: 14px; color: var(--texto-principal); border-radius: 8px; margin-bottom: 5px; }
+        .noti-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
+        .noti-item strong { color: var(--color-primario); }
 
         /* CABECERA CON PORTADA */
         .cabecera-perfil { background-color: var(--fondo-carta); border-radius: 16px; box-shadow: 0 4px 12px var(--sombra); text-align: center; margin-bottom: 25px; border: 1px solid var(--borde); overflow: hidden; position: relative; }
@@ -41,7 +51,6 @@
         .bio-perfil { color: var(--texto-principal); font-size: 15px; margin: 12px auto; max-width: 80%; line-height: 1.4; font-style: italic; }
         .datos-extra { color: var(--texto-secundario); font-size: 14px; margin-top: 5px; font-weight: bold; }
 
-        /* NUEVO: ESTADÍSTICAS EN TU PERFIL */
         .estadisticas-seguidores { display: flex; justify-content: center; gap: 20px; margin: 15px 0; font-size: 16px; color: var(--texto-principal); }
         .estadisticas-seguidores span { font-weight: bold; color: var(--color-primario); font-size: 18px; }
         
@@ -50,7 +59,7 @@
         .btn-editar { background-color: var(--fondo); color: var(--texto-principal); border: 1px solid var(--borde); padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
         
         /* CONFIGURACIÓN */
-        .panel-configuracion { display: none; background-color: var(--fondo-carta); padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); border-top: 4px solid var(--color-primario); }
+        .panel-configuracion { display: none; background-color: var(--fondo-carta); padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); border-top: 4px solid var(--color-primario); text-align: left; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; color: var(--texto-principal); margin-bottom: 5px; font-size: 14px; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: var(--fondo); color: var(--texto-principal); font-family: inherit; }
@@ -70,7 +79,18 @@
 
     <div class="barra-superior">
         <h1>Wueychat</h1>
-        <button id="btn-theme" class="btn-icono">☀️</button>
+        
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div class="contenedor-campanita">
+                <button id="btn-campanita" class="btn-icono">🔔<span id="punto-rojo" class="punto-rojo"></span></button>
+                <div id="panel-notificaciones" class="panel-notificaciones">
+                    <h4 style="margin: 0 0 10px 0; color: var(--color-primario); border-bottom: 1px solid var(--borde); padding-bottom: 5px;">Tus Alertas</h4>
+                    <div id="lista-notificaciones">Cargando avisos...</div>
+                </div>
+            </div>
+            
+            <button id="btn-theme" class="btn-icono">☀️</button>
+        </div>
     </div>
 
     <div class="contenedor-principal">
@@ -126,7 +146,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // Añadimos updateDoc y where para las notificaciones
+        import { getFirestore, collection, onSnapshot, query, where, doc, setDoc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
@@ -161,8 +182,66 @@
                 usuarioActual = user;
                 cargarDatosPerfil(user);
                 cargarMisPublicaciones(user.email);
+                escucharNotificaciones(); // Encendemos la campanita
             } else {
                 window.location.href = "index.html";
+            }
+        });
+
+        // --- SISTEMA DE NOTIFICACIONES ---
+        function escucharNotificaciones() {
+            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
+            
+            onSnapshot(qNoti, (snapshot) => {
+                const listaDiv = document.getElementById("lista-notificaciones");
+                const puntoRojo = document.getElementById("punto-rojo");
+                listaDiv.innerHTML = "";
+                let noLeidas = 0;
+                let notis = [];
+
+                snapshot.forEach(docSnap => {
+                    const noti = docSnap.data();
+                    noti.id = docSnap.id;
+                    if(noti.fecha) { notis.push(noti); }
+                    if (!noti.leida) noLeidas++;
+                });
+
+                notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
+
+                puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
+
+                if (notis.length === 0) {
+                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>";
+                    return;
+                }
+
+                notis.forEach(noti => {
+                    const item = document.createElement("div");
+                    item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`;
+                    item.dataset.id = noti.id;
+                    
+                    let texto = "";
+                    if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`;
+                    if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`;
+                    if (noti.tipo === "seguidor") texto = `¡<strong>${noti.deNombre}</strong> comenzó a seguirte! 🎉`;
+                    
+                    item.innerHTML = texto;
+                    listaDiv.appendChild(item);
+                });
+            });
+        }
+
+        document.getElementById("btn-campanita").addEventListener("click", (e) => {
+            e.stopPropagation();
+            const panel = document.getElementById("panel-notificaciones");
+            panel.style.display = panel.style.display === "block" ? "none" : "block";
+            
+            if (panel.style.display === "block") {
+                const elementosNoLeidos = document.querySelectorAll(".noti-item.no-leida");
+                elementosNoLeidos.forEach(async (item) => {
+                    const notiId = item.dataset.id;
+                    try { await updateDoc(doc(db, "notificaciones", notiId), { leida: true }); } catch(err){}
+                });
             }
         });
 
@@ -190,11 +269,9 @@
                 document.getElementById("avatar-letra").innerText = nombreMostrado.charAt(0).toUpperCase();
             }
 
-            // NUEVO: Escuchar mi propio documento de Firebase en tiempo real para mis estadísticas
             onSnapshot(doc(db, "usuarios", user.email), (docSnap) => {
                 if(docSnap.exists()) {
                     const datos = docSnap.data();
-                    
                     if(datos.biografia) {
                         document.getElementById("bio-perfil-texto").innerText = `"${datos.biografia}"`;
                         document.getElementById("input-bio").value = datos.biografia;
@@ -208,7 +285,6 @@
                     if(datos.genero) document.getElementById("input-genero").value = datos.genero;
                     if(datos.edad) document.getElementById("input-edad").value = datos.edad;
 
-                    // Actualizar mis contadores de seguidores
                     const misSeguidores = datos.seguidores || [];
                     const misSeguidos = datos.siguiendo || [];
                     document.getElementById("mi-contador-seguidores").innerText = misSeguidores.length;
