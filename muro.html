@@ -19,7 +19,6 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
         .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; }
 
-        /* BARRAS */
         .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border-bottom: 1px solid var(--borde); }
         .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 2px 5px var(--sombra); gap: 10px; }
         .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
@@ -38,7 +37,7 @@
         .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
         .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
 
-        /* NUEVO: ESTILOS DE LA CAMPANITA Y NOTIFICACIONES */
+        /* CAMPANITA Y NOTIFICACIONES */
         .contenedor-campanita { position: relative; }
         .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
         .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; }
@@ -167,7 +166,7 @@
                 usuarioActual = user;
                 if(user.email) llaveUsuarioActual = user.email.replace(/\./g, '_'); 
                 cargarPublicaciones();
-                escucharNotificaciones(); // Inicia la vigilancia de notificaciones
+                escucharNotificaciones(); // Inicia la vigilancia
             } else {
                 window.location.href = "index.html";
             }
@@ -188,9 +187,10 @@
             document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none";
         });
 
-        // --- SISTEMA DE NOTIFICACIONES ---
+        // --- SISTEMA DE NOTIFICACIONES CORREGIDO ---
         function escucharNotificaciones() {
-            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email), orderBy("fecha", "desc"));
+            // SOLUCIÓN: Quitamos el orderBy para evitar el error de índices en Firebase
+            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
             
             onSnapshot(qNoti, (snapshot) => {
                 const listaDiv = document.getElementById("lista-notificaciones");
@@ -202,15 +202,18 @@
                 snapshot.forEach(docSnap => {
                     const noti = docSnap.data();
                     noti.id = docSnap.id;
-                    notis.push(noti);
+                    if(noti.fecha) { notis.push(noti); }
                     if (!noti.leida) noLeidas++;
                 });
+
+                // Ordenamos las fechas manualmente con Javascript (Truco Maestro)
+                notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
 
                 // Prender o apagar el puntito rojo
                 puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
 
                 if (notis.length === 0) {
-                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes notificaciones nuevas.</p>";
+                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>";
                     return;
                 }
 
@@ -221,8 +224,8 @@
                     item.dataset.id = noti.id;
                     
                     let texto = "";
-                    if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota con ${noti.emoji}`;
-                    if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó en tu publicación.`;
+                    if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`;
+                    if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`;
                     
                     item.innerHTML = texto;
                     listaDiv.appendChild(item);
@@ -230,8 +233,10 @@
             });
         }
 
-        // Abrir menú de notificaciones y marcarlas como leídas
-        document.getElementById("btn-campanita").addEventListener("click", () => {
+        // LÓGICA DE LA CAMPANITA CORREGIDA
+        document.getElementById("btn-campanita").addEventListener("click", (e) => {
+            // Evitamos que un clic accidental cierre todo
+            e.stopPropagation();
             const panel = document.getElementById("panel-notificaciones");
             panel.style.display = panel.style.display === "block" ? "none" : "block";
             
@@ -244,6 +249,9 @@
             }
         });
 
+
+
+        
         // PUBLICAR
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
@@ -305,7 +313,6 @@
                             const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   ');
                             let botonEliminarHTML = post.autor === usuarioActual.email ? `<button class="btn-eliminar" data-id="${postId}">🗑️</button>` : "";
 
-                            // OJO AQUÍ: Agregamos data-autor a los emojis para saber a quién notificar
                             htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍" data-autor="${post.autor}">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️" data-autor="${post.autor}">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂" data-autor="${post.autor}">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮" data-autor="${post.autor}">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢" data-autor="${post.autor}">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonEliminarHTML}</div>`;
 
                             let htmlComentarios = `<div class="seccion-comentarios">`;
@@ -314,7 +321,6 @@
                                     htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}</div></div>`;
                                 });
                             }
-                            // OJO AQUÍ: Agregamos data-autor al botón de enviar comentario
                             htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`;
 
                             htmlContenido += htmlComentarios;
@@ -341,7 +347,7 @@
                 try { 
                     await updateDoc(ref, act); 
                     
-                    // Solo notifica si reaccionas a la foto de otra persona
+                    // Solo notifica si reaccionas a la foto de OTRA persona
                     if (autorDelPost !== usuarioActual.email) {
                         await addDoc(collection(db, "notificaciones"), {
                             para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien",
@@ -372,7 +378,7 @@
                         const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: textoComentario };
                         await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) });
                         
-                        // Notifica si comentas a otra persona
+                        // Notifica si comentas a OTRA persona
                         if (autorDelPost !== usuarioActual.email) {
                             await addDoc(collection(db, "notificaciones"), {
                                 para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien",
