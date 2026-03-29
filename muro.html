@@ -37,16 +37,13 @@
         .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
         .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
 
-        /* CAMPANITA Y NOTIFICACIONES */
         .contenedor-campanita { position: relative; }
         .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
         .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; }
         .noti-item { padding: 12px; border-bottom: 1px solid var(--borde); font-size: 14px; color: var(--texto-principal); border-radius: 8px; margin-bottom: 5px; }
-        .noti-item:last-child { border-bottom: none; margin-bottom: 0; }
         .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
         .noti-item strong { color: var(--color-primario); }
 
-        /* PUBLICACIÓN Y POSTS */
         .contenedor-publicacion { background-color: var(--fondo-carta); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); }
         textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
         .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
@@ -60,9 +57,10 @@
         .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 16px; text-decoration: none; }
         .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
         .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
-        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+        
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 5px var(--sombra); }
+        .post-video { max-width: 100%; border-radius: 8px; margin-top: 8px; outline: none; background-color: #000; box-shadow: 0 2px 5px var(--sombra); }
 
-        /* REACCIONES Y COMENTARIOS */
         .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
         .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
         .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
@@ -84,12 +82,10 @@
 
     <div class="barra-superior">
         <h1>Wueychat</h1>
-        
         <div class="contenedor-buscador">
             <span class="icono-lupa">🔍</span>
             <input type="text" id="buscador-muro" class="input-buscador" placeholder="Buscar amigos o notas...">
         </div>
-
         <div style="display: flex; align-items: center; gap: 5px;">
             <div class="contenedor-campanita">
                 <button id="btn-campanita" class="btn-icono">🔔<span id="punto-rojo" class="punto-rojo"></span></button>
@@ -98,7 +94,6 @@
                     <div id="lista-notificaciones">Cargando avisos...</div>
                 </div>
             </div>
-
             <button id="btn-theme" class="btn-icono">☀️</button>
             <button id="btn-salir-top" class="btn-eliminar-top">Salir</button>
         </div>
@@ -108,10 +103,10 @@
         <div class="contenedor-publicacion">
             <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente?"></textarea>
             <div class="acciones-publicar">
-                <input type="file" id="imagen-publicacion" accept="image/*">
+                <input type="file" id="archivo-publicacion" accept="image/*,video/*">
                 <button id="btn-publicar" class="btn-publicar">Publicar</button>
             </div>
-            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Subiendo nota...</p>
+            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Subiendo archivo... 🚀</p>
         </div>
         
         <p id="mensaje-no-resultados" style="display: none; text-align: center; color: var(--texto-secundario); font-weight: bold; margin-top: 30px;">No se encontraron resultados 🕵️‍♂️</p>
@@ -142,7 +137,11 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f";
+
+        // --- LAS DOS NUBES ---
+        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; // Para Fotos
+        const CLOUDINARY_CLOUD_NAME = "dizktanb9"; // Para Videos
+        const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
 
         let usuarioActual = null;
         let llaveUsuarioActual = "anonimo";
@@ -166,7 +165,7 @@
                 usuarioActual = user;
                 if(user.email) llaveUsuarioActual = user.email.replace(/\./g, '_'); 
                 cargarPublicaciones();
-                escucharNotificaciones(); // Inicia la vigilancia
+                escucharNotificaciones();
             } else {
                 window.location.href = "index.html";
             }
@@ -187,98 +186,110 @@
             document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none";
         });
 
-        // --- SISTEMA DE NOTIFICACIONES CORREGIDO ---
         function escucharNotificaciones() {
-            // SOLUCIÓN: Quitamos el orderBy para evitar el error de índices en Firebase
             const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
-            
             onSnapshot(qNoti, (snapshot) => {
                 const listaDiv = document.getElementById("lista-notificaciones");
                 const puntoRojo = document.getElementById("punto-rojo");
-                listaDiv.innerHTML = "";
-                let noLeidas = 0;
-                let notis = [];
-
-                snapshot.forEach(docSnap => {
-                    const noti = docSnap.data();
-                    noti.id = docSnap.id;
-                    if(noti.fecha) { notis.push(noti); }
-                    if (!noti.leida) noLeidas++;
-                });
-
-                // Ordenamos las fechas manualmente con Javascript (Truco Maestro)
+                listaDiv.innerHTML = ""; let noLeidas = 0; let notis = [];
+                snapshot.forEach(docSnap => { const noti = docSnap.data(); noti.id = docSnap.id; if(noti.fecha) { notis.push(noti); } if (!noti.leida) noLeidas++; });
                 notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
-
-                // Prender o apagar el puntito rojo
                 puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
 
-                if (notis.length === 0) {
-                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>";
-                    return;
-                }
+                if (notis.length === 0) { listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; }
 
-                // Dibujar la lista
                 notis.forEach(noti => {
-                    const item = document.createElement("div");
-                    item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`;
-                    item.dataset.id = noti.id;
-                    
+                    const item = document.createElement("div"); item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`; item.dataset.id = noti.id;
                     let texto = "";
                     if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`;
                     if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`;
-                    
-                    item.innerHTML = texto;
-                    listaDiv.appendChild(item);
+                    item.innerHTML = texto; listaDiv.appendChild(item);
                 });
             });
         }
 
-        // LÓGICA DE LA CAMPANITA CORREGIDA
         document.getElementById("btn-campanita").addEventListener("click", (e) => {
-            // Evitamos que un clic accidental cierre todo
-            e.stopPropagation();
-            const panel = document.getElementById("panel-notificaciones");
-            panel.style.display = panel.style.display === "block" ? "none" : "block";
-            
+            e.stopPropagation(); const panel = document.getElementById("panel-notificaciones"); panel.style.display = panel.style.display === "block" ? "none" : "block";
             if (panel.style.display === "block") {
-                const elementosNoLeidos = document.querySelectorAll(".noti-item.no-leida");
-                elementosNoLeidos.forEach(async (item) => {
-                    const notiId = item.dataset.id;
-                    try { await updateDoc(doc(db, "notificaciones", notiId), { leida: true }); } catch(err){}
+                document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => {
+                    try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){}
                 });
             }
         });
 
-
-
-        
-        // PUBLICAR
+        // --- SISTEMA HÍBRIDO DE SUBIDA (EL AGENTE DE TRÁNSITO) ---
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
             const texto = document.getElementById("texto-publicacion").value.trim();
-            const archivoImagen = document.getElementById("imagen-publicacion").files[0];
-            if (texto === "" && !archivoImagen) return;
+            const archivoMedia = document.getElementById("archivo-publicacion").files[0];
+            if (texto === "" && !archivoMedia) return;
 
             btnPublicar.disabled = true; document.getElementById("mensaje-publicando").style.display = "block";
-            let urlImagenFinal = null;
+            
+            let urlFinal = null;
+            let tipoFinal = null;
 
             try {
-                if (archivoImagen) {
-                    const formData = new FormData(); formData.append("image", archivoImagen);
-                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                    const datosImgbb = await respuestaImgbb.json();
-                    if (datosImgbb.success) urlImagenFinal = datosImgbb.data.url;
+                if (archivoMedia) {
+                    // ¿ES IMAGEN O VIDEO?
+                    if (archivoMedia.type.startsWith("image/")) {
+                        // RUTA 1: Manda la FOTO a ImgBB
+                        document.getElementById("mensaje-publicando").innerText = "Subiendo foto a ImgBB... 🖼️";
+                        const formData = new FormData(); 
+                        formData.append("image", archivoMedia);
+                        const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+                        const datosImgbb = await respuestaImgbb.json();
+                        
+                        if (datosImgbb.success) {
+                            urlFinal = datosImgbb.data.url;
+                            tipoFinal = "image";
+                        } else {
+                            throw new Error("Fallo en ImgBB");
+                        }
+                    } 
+                    else if (archivoMedia.type.startsWith("video/")) {
+                                                // RUTA 2: Manda el VIDEO a Cloudinary
+                        document.getElementById("mensaje-publicando").innerText = "Procesando video en Cloudinary... 🎬";
+                        const formData = new FormData(); 
+                        formData.append("file", archivoMedia);
+                        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+                        const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+                        const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData });
+                        const datos = await respuesta.json();
+                        
+                        if (datos.secure_url) {
+                            urlFinal = datos.secure_url;
+                            tipoFinal = "video";
+                        } else {
+                            console.error("Cloudinary error:", datos);
+                            alert("Asegúrate de haber creado el Upload Preset 'wueychat_media' en Cloudinary.");
+                            throw new Error("Fallo en Cloudinary");
+                        }
+                    } else {
+                        alert("Formato no soportado. Sube imágenes o videos.");
+                        throw new Error("Formato inválido");
+                    }
                 }
+                
+                document.getElementById("mensaje-publicando").innerText = "Guardando en el muro... 📝";
                 
                 await addDoc(collection(db, "publicaciones"), {
                     autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", 
-                    autorFoto: usuarioActual.photoURL || null, texto: texto, imagenUrl: urlImagenFinal, 
+                    autorFoto: usuarioActual.photoURL || null, texto: texto, 
+                    mediaUrl: urlFinal, mediaType: tipoFinal, // Datos nuevos limpios
+                    imagenUrl: (tipoFinal === "image") ? urlFinal : null, // Para retro-compatibilidad
                     fecha: serverTimestamp(), reacciones: {}, comentarios: []
                 });
                 
-                document.getElementById("texto-publicacion").value = ""; document.getElementById("imagen-publicacion").value = "";
-            } catch (error) { console.error(error); alert("Error al publicar."); } 
-            finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; }
+                document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
+            } catch (error) { 
+                console.error(error); alert("Hubo un error al subir la publicación."); 
+            } finally { 
+                btnPublicar.disabled = false; 
+                document.getElementById("mensaje-publicando").style.display = "none"; 
+                document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀"; // reset
+            }
         });
 
         function cargarPublicaciones() {
@@ -303,7 +314,20 @@
 
                             let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`;
                             if (post.texto) htmlContenido += `<div class="post-texto">${post.texto}</div>`;
-                            if (post.imagenUrl) htmlContenido += `<img src="${post.imagenUrl}" class="post-imagen">`;
+                            
+                            // LÓGICA REPRODUCTOR: Decide si es foto o video
+                            const urlArchivo = post.mediaUrl || post.imagenUrl;
+                            const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null);
+
+                            if (urlArchivo) {
+                                if (tipoArchivo === "video") {
+                                    // Pinta un reproductor de video nativo
+                                    htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`;
+                                } else {
+                                    // Pinta una imagen
+                                    htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`;
+                                }
+                            }
 
                             const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null;
                             for (const [correo, emoji] of Object.entries(reacciones)) {
@@ -337,67 +361,29 @@
         }
 
         document.getElementById("feed").addEventListener("click", async (e) => {
-            // REACCIONES Y NOTIFICACIÓN
             if (e.target.classList.contains("emoji")) {
-                const postId = e.target.getAttribute("data-id"); 
-                const emojiElegido = e.target.getAttribute("data-emoji");
-                const autorDelPost = e.target.getAttribute("data-autor");
-                
+                const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor");
                 const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
-                try { 
-                    await updateDoc(ref, act); 
-                    
-                    // Solo notifica si reaccionas a la foto de OTRA persona
-                    if (autorDelPost !== usuarioActual.email) {
-                        await addDoc(collection(db, "notificaciones"), {
-                            para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien",
-                            tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp()
-                        });
-                    }
-                } catch (err) { console.error(err); }
+                try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) { console.error(err); }
             }
-            
             if (e.target.classList.contains("btn-eliminar")) {
                 const postId = e.target.getAttribute("data-id");
-                if (confirm("¿Borrar nota para siempre?")) {
-                    try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { console.error(err); }
-                }
+                if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { console.error(err); } }
             }
-            
-            // COMENTARIOS Y NOTIFICACIÓN
             if (e.target.classList.contains("btn-enviar-comentario")) {
-                const postId = e.target.getAttribute("data-id");
-                const autorDelPost = e.target.getAttribute("data-autor");
-                const inputElemento = document.getElementById(`input-comentario-${postId}`);
-                const textoComentario = inputElemento.value.trim();
-                
+                const postId = e.target.getAttribute("data-id"); const autorDelPost = e.target.getAttribute("data-autor"); const inputElemento = document.getElementById(`input-comentario-${postId}`); const textoComentario = inputElemento.value.trim();
                 if (textoComentario !== "") {
                     e.target.disabled = true;
-                    try {
-                        const ref = doc(db, "publicaciones", postId);
-                        const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: textoComentario };
-                        await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) });
-                        
-                        // Notifica si comentas a OTRA persona
-                        if (autorDelPost !== usuarioActual.email) {
-                            await addDoc(collection(db, "notificaciones"), {
-                                para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien",
-                                tipo: "comentario", leida: false, fecha: serverTimestamp()
-                            });
-                        }
-                        
-                        inputElemento.value = ""; 
-                    } catch (err) { alert("Error al comentar."); } 
-                    finally { e.target.disabled = false; }
+                    try { const ref = doc(db, "publicaciones", postId); const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: textoComentario }; await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) });
+                        if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); } inputElemento.value = ""; 
+                    } catch (err) { alert("Error al comentar."); } finally { e.target.disabled = false; }
                 }
             }
         });
         
         document.getElementById("feed").addEventListener("keypress", async (e) => {
             if (e.key === "Enter" && e.target.classList.contains("input-comentario")) {
-                const postId = e.target.id.replace("input-comentario-", "");
-                const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`);
-                if(btnEnviar) btnEnviar.click();
+                const postId = e.target.id.replace("input-comentario-", ""); const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); if(btnEnviar) btnEnviar.click();
             }
         });
     </script>
