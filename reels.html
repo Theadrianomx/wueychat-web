@@ -13,7 +13,6 @@
         .reel-carta { height: 100vh; width: 100vw; scroll-snap-align: start; position: relative; background-color: #111; display: flex; justify-content: center; align-items: center; }
         .reel-video { height: 100%; width: 100%; object-fit: cover; cursor: pointer; }
         
-        /* INTERFAZ FLOTANTE */
         .reel-ui-inferior { position: absolute; bottom: 80px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; pointer-events: none; }
         .reel-info { flex: 1; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin-right: 20px; pointer-events: auto; }
         .reel-autor { font-weight: bold; font-size: 18px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
@@ -40,10 +39,7 @@
         .btn-subir-final { background: #1877f2; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
         .btn-cerrar-modal { background: none; border: none; color: #aaa; margin-top: 15px; cursor: pointer; font-size: 14px; }
 
-        /* NUEVO: TOAST FLOTANTE PARA SUBIDA EN SEGUNDO PLANO */
         .toast-notificacion { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(24, 119, 242, 0.9); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 1000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(5px); font-size: 14px; }
-        
-        /* Ícono de sonido */
         .icono-sonido { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: rgba(255,255,255,0.7); pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; }
     </style>
 </head>
@@ -65,7 +61,7 @@
             <h2 style="margin-top: 0; color: #1877f2;">Nuevo WueyReel</h2>
             <input type="file" id="archivo-reel" accept="video/*" class="input-reel">
             <textarea id="texto-reel" rows="3" placeholder="Describe tu video..." class="input-reel" style="resize: none;"></textarea>
-            <button class="btn-subir-final" id="btn-publicar-reel">Subir Video</button>
+            <button class="btn-subir-final" id="btn-publicar-reel">Publicar Video</button>
             <button class="btn-cerrar-modal" id="btn-cerrar-modal">Cancelar</button>
         </div>
     </div>
@@ -79,6 +75,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        // IMPORTANTE: Ahora usamos la colección "publicaciones" en lugar de "reels"
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" };
@@ -98,89 +95,75 @@
         document.getElementById("btn-abrir-camara").addEventListener("click", () => document.getElementById("modal-subir").style.display = "flex");
         document.getElementById("btn-cerrar-modal").addEventListener("click", () => document.getElementById("modal-subir").style.display = "none");
 
-        // --- SOLUCIÓN 1: SUBIDA EN SEGUNDO PLANO ---
+        // --- SUBIR REEL A LA COLECCIÓN "PUBLICACIONES" ---
         document.getElementById("btn-publicar-reel").addEventListener("click", async () => {
             const archivoVideo = document.getElementById("archivo-reel").files[0];
             const texto = document.getElementById("texto-reel").value.trim();
             if (!archivoVideo) { alert("¡Selecciona un video primero!"); return; }
 
-            // 1. Cierra la ventana molesta DE INMEDIATO
             document.getElementById("modal-subir").style.display = "none";
-            
-            // 2. Muestra el avisito flotante y limpia los campos para la próxima
             const toast = document.getElementById("toast-subiendo");
-            toast.innerText = "Subiendo Reel... ⏳";
-            toast.style.display = "block";
-            
-            document.getElementById("archivo-reel").value = ""; 
-            document.getElementById("texto-reel").value = "";
+            toast.innerText = "Subiendo Reel... ⏳"; toast.style.display = "block";
+            document.getElementById("archivo-reel").value = ""; document.getElementById("texto-reel").value = "";
 
             try {
-                // Sube el video "escondido" en segundo plano
                 const formData = new FormData(); formData.append("file", archivoVideo); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
                 const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
                 const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData });
                 const datos = await respuesta.json();
                 
                 if (datos.secure_url) {
-                    await addDoc(collection(db, "reels"), {
+                    // Magia: Lo guardamos en "publicaciones" marcándolo como "video"
+                    await addDoc(collection(db, "publicaciones"), {
                         autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
-                        videoUrl: datos.secure_url, texto: texto, fecha: serverTimestamp(), reacciones: {}, comentarios: []
+                        mediaUrl: datos.secure_url, mediaType: "video", texto: texto, fecha: serverTimestamp(), reacciones: {}, comentarios: []
                     });
-                    
-                    // Avisar que ya terminó
-                    toast.innerText = "¡Reel publicado! ✅";
-                    setTimeout(() => toast.style.display = "none", 3000);
+                    toast.innerText = "¡Video publicado en tu Muro y Reels! ✅"; setTimeout(() => toast.style.display = "none", 3000);
                 } else { throw new Error("Error en Cloudinary"); }
-            } catch (err) { 
-                console.error(err); 
-                toast.innerText = "❌ Error al subir el Reel";
-                setTimeout(() => toast.style.display = "none", 4000);
-            } 
+            } catch (err) { console.error(err); toast.innerText = "❌ Error al subir el video"; setTimeout(() => toast.style.display = "none", 4000); } 
         });
 
-        // --- SOLUCIÓN 2: ARREGLAR LA CARGA DE VIDEOS ---
+        // --- DIBUJAR SÓLO LOS VIDEOS DE LA COLECCIÓN "PUBLICACIONES" ---
         function cargarReels() {
             const feedDiv = document.getElementById("feed-reels");
-            const q = query(collection(db, "reels"), orderBy("fecha", "desc"));
+            // Leemos todo el muro (publicaciones) ordenado por fecha
+            const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
 
             onSnapshot(q, (snapshot) => {
                 feedDiv.innerHTML = "";
-                
-                if (snapshot.empty) {
-                    feedDiv.innerHTML = `<div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">Sé el primero en subir un Reel 🎬</div>`;
-                    return;
-                }
+                let hayVideos = false;
 
                 snapshot.forEach((docSnap) => {
-                    const reel = docSnap.data(); const reelId = docSnap.id;
-                    if(reel.videoUrl) {
+                    const post = docSnap.data(); const postId = docSnap.id;
+                    
+                    // FILTRO INTELIGENTE: Si tiene mediaType "video", o si el mediaUrl tiene formato de video
+                    const esVideo = post.mediaType === "video" || (post.mediaUrl && post.mediaUrl.match(/\.(mp4|webm|ogg)$/i));
+                    
+                    if(esVideo) {
+                        hayVideos = true;
                         const caja = document.createElement("div"); caja.className = "reel-carta";
                         
-                        const reacciones = reel.reacciones || {};
+                        // Ojo: las reacciones ahora leen de "publicaciones"
+                        const reacciones = post.reacciones || {};
                         const tieneMiLike = reacciones[llaveUsuarioActual] === "❤️";
                         const totalLikes = Object.keys(reacciones).length;
-                        const totalComentarios = reel.comentarios ? reel.comentarios.length : 0;
-                        const avatarInfo = reel.autorFoto ? `<img src="${reel.autorFoto}" class="reel-avatar">` : `<div class="reel-avatar" style="background:#1877f2; display:flex; justify-content:center; align-items:center;">${reel.autorNombre.charAt(0)}</div>`;
+                        const totalComentarios = post.comentarios ? post.comentarios.length : 0;
+                        const avatarInfo = post.autorFoto ? `<img src="${post.autorFoto}" class="reel-avatar">` : `<div class="reel-avatar" style="background:#1877f2; display:flex; justify-content:center; align-items:center;">${post.autorNombre.charAt(0)}</div>`;
 
-                        // MAGIA AQUÍ: Se le agrega 'muted' por defecto para que los celulares permitan el AutoPlay
                         caja.innerHTML = `
-                            <video src="${reel.videoUrl}" class="reel-video" loop playsinline muted></video>
+                            <video src="${post.mediaUrl}" class="reel-video" loop playsinline muted></video>
                             <div class="icono-sonido">🔇</div>
                             <div class="reel-ui-inferior">
                                 <div class="reel-info">
-                                    <div class="reel-autor">${avatarInfo} @${reel.autorNombre.split(" ")[0]}</div>
-                                    <div class="reel-texto">${reel.texto}</div>
+                                    <div class="reel-autor">${avatarInfo} @${post.autorNombre.split(" ")[0]}</div>
+                                    <div class="reel-texto">${post.texto || ''}</div>
                                 </div>
                                 <div class="reel-acciones">
-                                    <button class="btn-accion btn-like" data-id="${reelId}" style="color: ${tieneMiLike ? '#ff2b54' : 'white'}">
+                                    <button class="btn-accion btn-like" data-id="${postId}" style="color: ${tieneMiLike ? '#ff2b54' : 'white'}">
                                         ${tieneMiLike ? '❤️' : '🤍'} <span class="texto-accion">${totalLikes}</span>
                                     </button>
-                                    <button class="btn-accion btn-comentar" data-id="${reelId}">
+                                    <button class="btn-accion btn-comentar" data-id="${postId}">
                                         💬 <span class="texto-accion">${totalComentarios}</span>
-                                    </button>
-                                    <button class="btn-accion btn-compartir" data-id="${reelId}" data-url="${reel.videoUrl}" data-texto="${reel.texto}">
-                                        🔄 <span class="texto-accion">Muro</span>
                                     </button>
                                 </div>
                             </div>
@@ -189,27 +172,25 @@
                     }
                 });
 
+                if (!hayVideos) {
+                    feedDiv.innerHTML = `<div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">No hay videos en el muro aún. ¡Sube el primero! 🎬</div>`;
+                    return;
+                }
+
                 // REPRODUCTOR INTELIGENTE
                 const videos = document.querySelectorAll('.reel-video');
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) { 
-                            entry.target.play().catch(e => console.log("Autoplay bloqueado:", e)); 
-                        } 
-                        else { 
-                            entry.target.pause(); 
-                            entry.target.currentTime = 0; 
-                        }
+                        if (entry.isIntersecting) { entry.target.play().catch(e => console.log("Autoplay bloqueado:", e)); } 
+                        else { entry.target.pause(); entry.target.currentTime = 0; }
                     });
                 }, { threshold: 0.6 });
 
                 videos.forEach(video => {
                     observer.observe(video);
-                    
-                    // Al tocar el video, activamos/desactivamos el sonido
                     video.addEventListener('click', () => { 
                         video.muted = !video.muted;
-                        const icono = video.nextElementSibling; // El div icono-sonido
+                        const icono = video.nextElementSibling;
                         icono.innerText = video.muted ? "🔇" : "🔊";
                         icono.style.opacity = "1";
                         setTimeout(() => { icono.style.opacity = "0"; }, 1000);
@@ -218,12 +199,13 @@
             });
         }
 
+        // ACCIONES DE BOTONES (Conectados a la colección "publicaciones")
         document.getElementById("feed-reels").addEventListener("click", async (e) => {
             const target = e.target.closest('.btn-accion'); if(!target) return;
-            const reelId = target.getAttribute("data-id");
+            const postId = target.getAttribute("data-id");
 
             if (target.classList.contains("btn-like")) {
-                const ref = doc(db, "reels", reelId);
+                const ref = doc(db, "publicaciones", postId);
                 const esCorazonRojo = target.innerText.includes('❤️');
                 const act = {}; act[`reacciones.${llaveUsuarioActual}`] = esCorazonRojo ? null : "❤️";
                 try { await updateDoc(ref, act); } catch(err){}
@@ -232,17 +214,7 @@
             if (target.classList.contains("btn-comentar")) {
                 const comentario = prompt("Escribe tu comentario:");
                 if(comentario && comentario.trim() !== "") {
-                    try { await updateDoc(doc(db, "reels", reelId), { comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() }) }); } catch(err){}
-                }
-            }
-
-            if (target.classList.contains("btn-compartir")) {
-                if(confirm("¿Quieres compartir este Reel en tu Muro de WueyChat?")) {
-                    const videoUrl = target.getAttribute("data-url"); const textoOriginal = target.getAttribute("data-texto");
-                    try {
-                        await addDoc(collection(db, "publicaciones"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: `🎬 Compartió un Reel: "${textoOriginal}"`, mediaUrl: videoUrl, mediaType: "video", fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
-                        alert("¡Compartido en tu muro exitosamente!");
-                    } catch(err) { alert("Error al compartir."); }
+                    try { await updateDoc(doc(db, "publicaciones", postId), { comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() }) }); } catch(err){}
                 }
             }
         });
