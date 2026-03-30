@@ -7,7 +7,6 @@
     <style>
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
         
-        /* MAGIA DE TIKTOK: SCROLL SNAP */
         .contenedor-reels { height: 100vh; width: 100vw; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; scroll-behavior: smooth; }
         .contenedor-reels::-webkit-scrollbar { display: none; }
         
@@ -26,26 +25,31 @@
         .btn-accion:active { transform: scale(1.2); }
         .texto-accion { font-size: 12px; font-weight: bold; margin-top: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 
-        /* BARRA SUPERIOR TRANSPARENTE */
-        .barra-top { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 20; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .barra-top { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 20; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); pointer-events: none; }
         .barra-top h1 { margin: 0; font-size: 22px; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
-        .btn-camara { background: rgba(255,255,255,0.2); border: 2px solid #fff; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); }
+        .btn-camara { pointer-events: auto; background: rgba(255,255,255,0.2); border: 2px solid #fff; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); }
 
-        /* BARRA INFERIOR */
         .barra-inferior { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; background-color: rgba(0, 0, 0, 0.9); z-index: 100; border-top: 1px solid #333; }
         .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; padding: 8px; border-radius: 50%; }
         .nav-link { text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
         .nav-link.activo .btn-icono, .nav-link.activo span { color: #fff; }
 
-        /* MODAL SUBIR REEL */
         .modal-subir { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; justify-content: center; align-items: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .caja-subir { background: #222; padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
         .input-reel { width: 100%; padding: 10px; margin: 15px 0; border-radius: 8px; border: 1px solid #444; background: #111; color: white; box-sizing: border-box; }
         .btn-subir-final { background: #1877f2; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
         .btn-cerrar-modal { background: none; border: none; color: #aaa; margin-top: 15px; cursor: pointer; font-size: 14px; }
+
+        /* NUEVO: TOAST FLOTANTE PARA SUBIDA EN SEGUNDO PLANO */
+        .toast-notificacion { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(24, 119, 242, 0.9); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 1000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(5px); font-size: 14px; }
+        
+        /* Ícono de sonido */
+        .icono-sonido { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: rgba(255,255,255,0.7); pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; }
     </style>
 </head>
 <body>
+
+    <div class="toast-notificacion" id="toast-subiendo">Subiendo Reel... ⏳</div>
 
     <div class="barra-top">
         <h1>WueyReels</h1>
@@ -61,7 +65,6 @@
             <h2 style="margin-top: 0; color: #1877f2;">Nuevo WueyReel</h2>
             <input type="file" id="archivo-reel" accept="video/*" class="input-reel">
             <textarea id="texto-reel" rows="3" placeholder="Describe tu video..." class="input-reel" style="resize: none;"></textarea>
-            <p id="msj-subiendo" style="display: none; color: #4CAF50; font-weight: bold;">Subiendo a la nube (Puede tardar)... ⏳</p>
             <button class="btn-subir-final" id="btn-publicar-reel">Subir Video</button>
             <button class="btn-cerrar-modal" id="btn-cerrar-modal">Cancelar</button>
         </div>
@@ -92,60 +95,78 @@
             else { window.location.href = "index.html"; }
         });
 
-        // CONTROL DEL MODAL DE SUBIDA
         document.getElementById("btn-abrir-camara").addEventListener("click", () => document.getElementById("modal-subir").style.display = "flex");
         document.getElementById("btn-cerrar-modal").addEventListener("click", () => document.getElementById("modal-subir").style.display = "none");
 
-        // SUBIR REEL A CLOUDINARY Y FIREBASE (Nueva colección: reels)
+        // --- SOLUCIÓN 1: SUBIDA EN SEGUNDO PLANO ---
         document.getElementById("btn-publicar-reel").addEventListener("click", async () => {
             const archivoVideo = document.getElementById("archivo-reel").files[0];
             const texto = document.getElementById("texto-reel").value.trim();
             if (!archivoVideo) { alert("¡Selecciona un video primero!"); return; }
 
-            document.getElementById("btn-publicar-reel").disabled = true;
-            document.getElementById("msj-subiendo").style.display = "block";
+            // 1. Cierra la ventana molesta DE INMEDIATO
+            document.getElementById("modal-subir").style.display = "none";
+            
+            // 2. Muestra el avisito flotante y limpia los campos para la próxima
+            const toast = document.getElementById("toast-subiendo");
+            toast.innerText = "Subiendo Reel... ⏳";
+            toast.style.display = "block";
+            
+            document.getElementById("archivo-reel").value = ""; 
+            document.getElementById("texto-reel").value = "";
 
             try {
-                // Subir a Cloudinary
+                // Sube el video "escondido" en segundo plano
                 const formData = new FormData(); formData.append("file", archivoVideo); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
                 const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
                 const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData });
                 const datos = await respuesta.json();
                 
                 if (datos.secure_url) {
-                    // Guardar en Firebase
                     await addDoc(collection(db, "reels"), {
                         autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
                         videoUrl: datos.secure_url, texto: texto, fecha: serverTimestamp(), reacciones: {}, comentarios: []
                     });
-                    document.getElementById("modal-subir").style.display = "none";
-                    document.getElementById("archivo-reel").value = ""; document.getElementById("texto-reel").value = "";
+                    
+                    // Avisar que ya terminó
+                    toast.innerText = "¡Reel publicado! ✅";
+                    setTimeout(() => toast.style.display = "none", 3000);
                 } else { throw new Error("Error en Cloudinary"); }
-            } catch (err) { console.error(err); alert("Error al subir el reel."); } 
-            finally { document.getElementById("btn-publicar-reel").disabled = false; document.getElementById("msj-subiendo").style.display = "none"; }
+            } catch (err) { 
+                console.error(err); 
+                toast.innerText = "❌ Error al subir el Reel";
+                setTimeout(() => toast.style.display = "none", 4000);
+            } 
         });
 
-        // DIBUJAR LOS REELS Y OBSERVARLOS
+        // --- SOLUCIÓN 2: ARREGLAR LA CARGA DE VIDEOS ---
         function cargarReels() {
             const feedDiv = document.getElementById("feed-reels");
             const q = query(collection(db, "reels"), orderBy("fecha", "desc"));
 
             onSnapshot(q, (snapshot) => {
                 feedDiv.innerHTML = "";
+                
+                if (snapshot.empty) {
+                    feedDiv.innerHTML = `<div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">Sé el primero en subir un Reel 🎬</div>`;
+                    return;
+                }
+
                 snapshot.forEach((docSnap) => {
                     const reel = docSnap.data(); const reelId = docSnap.id;
                     if(reel.videoUrl) {
                         const caja = document.createElement("div"); caja.className = "reel-carta";
                         
-                        // Lógica de Likes
                         const reacciones = reel.reacciones || {};
                         const tieneMiLike = reacciones[llaveUsuarioActual] === "❤️";
                         const totalLikes = Object.keys(reacciones).length;
                         const totalComentarios = reel.comentarios ? reel.comentarios.length : 0;
                         const avatarInfo = reel.autorFoto ? `<img src="${reel.autorFoto}" class="reel-avatar">` : `<div class="reel-avatar" style="background:#1877f2; display:flex; justify-content:center; align-items:center;">${reel.autorNombre.charAt(0)}</div>`;
 
+                        // MAGIA AQUÍ: Se le agrega 'muted' por defecto para que los celulares permitan el AutoPlay
                         caja.innerHTML = `
-                            <video src="${reel.videoUrl}" class="reel-video" loop playsinline></video>
+                            <video src="${reel.videoUrl}" class="reel-video" loop playsinline muted></video>
+                            <div class="icono-sonido">🔇</div>
                             <div class="reel-ui-inferior">
                                 <div class="reel-info">
                                     <div class="reel-autor">${avatarInfo} @${reel.autorNombre.split(" ")[0]}</div>
@@ -168,62 +189,58 @@
                     }
                 });
 
-                // INTERSECTION OBSERVER (El truco para reproducir solo el video que estás viendo)
+                // REPRODUCTOR INTELIGENTE
                 const videos = document.querySelectorAll('.reel-video');
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) { entry.target.play(); } 
-                        else { entry.target.pause(); entry.target.currentTime = 0; }
+                        if (entry.isIntersecting) { 
+                            entry.target.play().catch(e => console.log("Autoplay bloqueado:", e)); 
+                        } 
+                        else { 
+                            entry.target.pause(); 
+                            entry.target.currentTime = 0; 
+                        }
                     });
-                }, { threshold: 0.6 }); // Se reproduce cuando el 60% del video está en pantalla
+                }, { threshold: 0.6 });
 
                 videos.forEach(video => {
                     observer.observe(video);
-                    // Pausar/Reproducir al tocar la pantalla
-                    video.addEventListener('click', () => { if(video.paused) video.play(); else video.pause(); });
+                    
+                    // Al tocar el video, activamos/desactivamos el sonido
+                    video.addEventListener('click', () => { 
+                        video.muted = !video.muted;
+                        const icono = video.nextElementSibling; // El div icono-sonido
+                        icono.innerText = video.muted ? "🔇" : "🔊";
+                        icono.style.opacity = "1";
+                        setTimeout(() => { icono.style.opacity = "0"; }, 1000);
+                    });
                 });
             });
         }
 
-        // ACCIONES DE LOS BOTONES
         document.getElementById("feed-reels").addEventListener("click", async (e) => {
             const target = e.target.closest('.btn-accion'); if(!target) return;
             const reelId = target.getAttribute("data-id");
 
-            // DAR LIKE
             if (target.classList.contains("btn-like")) {
                 const ref = doc(db, "reels", reelId);
                 const esCorazonRojo = target.innerText.includes('❤️');
-                const act = {}; act[`reacciones.${llaveUsuarioActual}`] = esCorazonRojo ? null : "❤️"; // Toggle like
-                
-                // Firestore no tiene "delete key" en updateDoc directo fácil, mejor usamos setDoc con merge
-                // Para quitar el like, reescribimos el mapa entero (Simplificación)
-                // O mejor usamos un truco: Si ya tiene like, mandamos borrar. Si no, lo ponemos.
-                // Como es frontend rápido, lo dejaremos como updateDoc simple (reemplaza).
+                const act = {}; act[`reacciones.${llaveUsuarioActual}`] = esCorazonRojo ? null : "❤️";
                 try { await updateDoc(ref, act); } catch(err){}
             }
 
-            // COMENTAR (Por ahora lanza un prompt nativo del celular)
             if (target.classList.contains("btn-comentar")) {
                 const comentario = prompt("Escribe tu comentario:");
                 if(comentario && comentario.trim() !== "") {
-                    try { await updateDoc(doc(db, "reels", reelId), {
-                        comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() })
-                    }); } catch(err){}
+                    try { await updateDoc(doc(db, "reels", reelId), { comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() }) }); } catch(err){}
                 }
             }
 
-            // COMPARTIR AL MURO NORMAL
             if (target.classList.contains("btn-compartir")) {
                 if(confirm("¿Quieres compartir este Reel en tu Muro de WueyChat?")) {
-                    const videoUrl = target.getAttribute("data-url");
-                    const textoOriginal = target.getAttribute("data-texto");
+                    const videoUrl = target.getAttribute("data-url"); const textoOriginal = target.getAttribute("data-texto");
                     try {
-                        await addDoc(collection(db, "publicaciones"), {
-                            autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
-                            texto: `🎬 Compartió un Reel: "${textoOriginal}"`, mediaUrl: videoUrl, mediaType: "video",
-                            fecha: serverTimestamp(), reacciones: {}, comentarios: []
-                        });
+                        await addDoc(collection(db, "publicaciones"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: `🎬 Compartió un Reel: "${textoOriginal}"`, mediaUrl: videoUrl, mediaType: "video", fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                         alert("¡Compartido en tu muro exitosamente!");
                     } catch(err) { alert("Error al compartir."); }
                 }
