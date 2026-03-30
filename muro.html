@@ -24,8 +24,7 @@
         .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
         
         .contenedor-buscador { flex-grow: 1; max-width: 350px; position: relative; }
-        .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; transition: all 0.2s; }
-        .input-buscador:focus { outline: none; border-color: var(--color-primario); box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
+        .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; }
         .icono-lupa { position: absolute; left: 12px; top: 10px; font-size: 14px; color: var(--texto-secundario); }
         @media (min-width: 500px) { .barra-superior h1 { display: block; } }
 
@@ -44,7 +43,7 @@
         .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
         .noti-item strong { color: var(--color-primario); }
 
-        /* --- NUEVO: ESTILOS DE ESTADOS EFÍMEROS (STORIES) --- */
+        /* ESTADOS EFÍMEROS (BARRA VIP) */
         .contenedor-historias { display: flex; gap: 15px; overflow-x: auto; padding: 15px 0 5px 0; margin-bottom: 20px; scrollbar-width: none; }
         .contenedor-historias::-webkit-scrollbar { display: none; }
         .historia-item { display: flex; flex-direction: column; align-items: center; min-width: 75px; cursor: pointer; position: relative; }
@@ -55,13 +54,35 @@
         .historia-nombre { font-size: 12px; color: var(--texto-principal); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; text-align: center; }
         .btn-agregar-icono { position: absolute; bottom: 20px; right: 0; background-color: var(--color-primario); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 3px solid var(--fondo); }
 
-        /* PUBLICACIÓN Y POSTS */
+        /* --- NUEVO: PANTALLA COMPLETA DEL VISOR DE ESTADOS --- */
+        .visor-estados { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1000; flex-direction: column; }
+        .visor-barra-progreso { width: 100%; height: 3px; background-color: rgba(255,255,255,0.3); margin-top: 10px; display: flex; }
+        .visor-progreso-lleno { height: 100%; background-color: #fff; width: 0%; transition: width linear; }
+        
+        .visor-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 15px; color: white; position: absolute; top: 15px; width: 100%; box-sizing: border-box; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .visor-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .visor-nombre-texto { font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .btn-cerrar-visor { background: none; border: none; color: white; font-size: 28px; cursor: pointer; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+
+        .visor-contenido { flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        .visor-media-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .visor-media-video { width: 100%; max-height: 100%; object-fit: contain; outline: none; }
+
+        .visor-interaccion { padding: 15px; display: flex; gap: 10px; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-respuesta { flex-grow: 1; padding: 12px 15px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.5); background-color: transparent; color: white; font-size: 15px; }
+        .input-respuesta::placeholder { color: rgba(255,255,255,0.8); }
+        .btn-enviar-respuesta { background-color: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .visor-emojis { display: flex; gap: 10px; margin-left: 5px; }
+        .visor-emoji { font-size: 24px; cursor: pointer; transition: transform 0.2s; }
+        .visor-emoji:active { transform: scale(1.3); }
+        .toast-enviado { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 20; }
+
+        /* PUBLICACIÓN Y POSTS NORMALES */
         .contenedor-publicacion { background-color: var(--fondo-carta); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); }
         textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
         .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
         input[type="file"] { font-size: 14px; color: var(--texto-secundario); max-width: 50%; }
         .btn-publicar { background-color: var(--color-primario); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; flex-grow: 1; }
-
         .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); }
         .post-cabecera { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
         .post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primario); background-color: var(--color-primario); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
@@ -69,10 +90,8 @@
         .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 16px; text-decoration: none; }
         .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
         .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
-        
         .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 5px var(--sombra); }
         .post-video { max-width: 100%; border-radius: 8px; margin-top: 8px; outline: none; background-color: #000; box-shadow: 0 2px 5px var(--sombra); }
-
         .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
         .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
         .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
@@ -81,7 +100,6 @@
         .emoji { cursor: pointer; font-size: 26px; }
         .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
         .btn-eliminar { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px 12px; }
-
         .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
         .comentario { background-color: var(--fondo-comentario); padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 14px; display: inline-block; max-width: 90%; }
         .comentario strong { color: var(--texto-principal); margin-right: 5px; }
@@ -111,8 +129,30 @@
         </div>
     </div>
 
+    <div id="visor-estados" class="visor-estados">
+        <div class="visor-barra-progreso"><div class="visor-progreso-lleno" id="barra-progreso"></div></div>
+        <div class="visor-cabecera">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="visor-avatar" src="" class="visor-avatar-img">
+                <span id="visor-nombre" class="visor-nombre-texto">Usuario</span>
+            </div>
+            <button id="btn-cerrar-visor" class="btn-cerrar-visor">✖</button>
+        </div>
+        <div class="visor-contenido" id="visor-contenido"></div>
+        <div class="toast-enviado" id="toast-enviado">Enviado ✅</div>
+        <div class="visor-interaccion" id="visor-interaccion">
+            <input type="text" id="input-respuesta-estado" class="input-respuesta" placeholder="Responder...">
+            <button class="btn-enviar-respuesta" id="btn-enviar-respuesta">➤</button>
+            <div class="visor-emojis">
+                <span class="visor-emoji" data-emoji="❤️">❤️</span>
+                <span class="visor-emoji" data-emoji="🔥">🔥</span>
+                <span class="visor-emoji" data-emoji="😂">😂</span>
+                <span class="visor-emoji" data-emoji="😮">😮</span>
+            </div>
+        </div>
+    </div>
+
     <div class="contenedor-principal">
-        
         <div class="contenedor-historias" id="barra-historias">
             <div class="historia-item" id="btn-mi-historia">
                 <div class="historia-avatar-contenedor" id="mi-aro-historia">
@@ -123,7 +163,6 @@
                 <span class="historia-nombre">Mi Estado</span>
             </div>
             <input type="file" id="archivo-historia" accept="image/*,video/*" style="display: none;">
-            
             <div id="lista-historias-amigos" style="display: flex; gap: 15px;"></div>
         </div>
         <p id="mensaje-subiendo-historia" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-bottom: 15px; font-weight: bold;">Subiendo estado (Se borrará en 24h)... ⏳</p>
@@ -138,7 +177,6 @@
         </div>
         
         <p id="mensaje-no-resultados" style="display: none; text-align: center; color: var(--texto-secundario); font-weight: bold; margin-top: 30px;">No se encontraron resultados 🕵️‍♂️</p>
-        
         <div id="feed"></div>
     </div>
 
@@ -152,169 +190,150 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
-            authDomain: "wueychat.firebaseapp.com",
-            projectId: "wueychat",
-            storageBucket: "wueychat.firebasestorage.app",
-            messagingSenderId: "889745387297",
-            appId: "1:889745387297:web:1b8343a328d854fc99d860",
-            measurementId: "G-LKQ86ZXTRK"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        
+        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; const CLOUDINARY_CLOUD_NAME = "dizktanb9"; const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let usuarioActual = null; let llaveUsuarioActual = "anonimo";
+        let diccionarioHistorias = {}; // Aquí guardaremos los estados vivos temporalmente
+        let timeoutVisor = null; // Para detener la barrita
+        let autorViendo = null; // Para saber a quién le estamos comentando
 
-        // NUBES
-        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; 
-        const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
-        const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
-
-        let usuarioActual = null;
-        let llaveUsuarioActual = "anonimo";
-
-        const btnTheme = document.getElementById('btn-theme');
-        const html = document.documentElement;
-        let temaGuardado = 'light';
-        try { temaGuardado = localStorage.getItem('theme') || 'light'; } catch(e) {}
-        html.setAttribute('data-theme', temaGuardado);
-        btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
-
-        btnTheme.addEventListener('click', () => {
-            const nuevoTema = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-theme', nuevoTema);
-            try { localStorage.setItem('theme', nuevoTema); } catch(e) {}
-            btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙';
-        });
+        const btnTheme = document.getElementById('btn-theme'); const html = document.documentElement; let temaGuardado = 'light'; try { temaGuardado = localStorage.getItem('theme') || 'light'; } catch(e) {} html.setAttribute('data-theme', temaGuardado); btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
+        btnTheme.addEventListener('click', () => { const nuevoTema = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; html.setAttribute('data-theme', nuevoTema); try { localStorage.setItem('theme', nuevoTema); } catch(e) {} btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙'; });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                usuarioActual = user;
-                if(user.email) llaveUsuarioActual = user.email.replace(/\./g, '_'); 
-                
-                // Poner mi foto en el botón de "Mi Estado"
+                usuarioActual = user; if(user.email) llaveUsuarioActual = user.email.replace(/\./g, '_'); 
                 const nombreMostrar = user.displayName || "Yo";
-                if(user.photoURL) {
-                    document.getElementById("letra-mi-historia").style.display = "none";
-                    document.getElementById("img-mi-historia").src = user.photoURL;
-                    document.getElementById("img-mi-historia").style.display = "block";
-                } else {
-                    document.getElementById("letra-mi-historia").innerText = nombreMostrar.charAt(0).toUpperCase();
-                }
-
-                cargarPublicaciones();
-                escucharNotificaciones();
-                escucharHistorias(); // <--- Inicia la magia del Reloj de Arena
-            } else {
-                window.location.href = "index.html";
-            }
+                if(user.photoURL) { document.getElementById("letra-mi-historia").style.display = "none"; document.getElementById("img-mi-historia").src = user.photoURL; document.getElementById("img-mi-historia").style.display = "block"; } else { document.getElementById("letra-mi-historia").innerText = nombreMostrar.charAt(0).toUpperCase(); }
+                cargarPublicaciones(); escucharNotificaciones(); escucharHistorias();
+            } else { window.location.href = "index.html"; }
         });
 
         document.getElementById("btn-salir-top").addEventListener("click", () => signOut(auth));
 
-        // --- MAGIA DE LOS ESTADOS EFÍMEROS ---
-        
-        // 1. Botón para abrir galería y subir estado
-        document.getElementById("btn-mi-historia").addEventListener("click", () => {
-            document.getElementById("archivo-historia").click();
-        });
 
-        // 2. Subir el Estado a la colección "estados"
-        document.getElementById("archivo-historia").addEventListener("change", async (e) => {
-            const archivoMedia = e.target.files[0];
-            if (!archivoMedia) return;
-
-            document.getElementById("mensaje-subiendo-historia").style.display = "block";
-            let urlFinal = null;
-            let tipoFinal = null;
-
-            try {
-                if (archivoMedia.type.startsWith("image/")) {
-                    const formData = new FormData(); formData.append("image", archivoMedia);
-                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                    const datosImgbb = await respuestaImgbb.json();
-                    if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error();
-                } 
-                else if (archivoMedia.type.startsWith("video/")) {
-                    const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-                    const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-                    const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData });
-                    const datos = await respuesta.json();
-                    if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error();
-                }
-
-                // Guardar en Firebase (Colección nueva: estados)
-                await addDoc(collection(db, "estados"), {
-                    autor: usuarioActual.email, 
-                    autorNombre: usuarioActual.displayName || "Usuario", 
-                    autorFoto: usuarioActual.photoURL || null, 
-                    mediaUrl: urlFinal, 
-                    mediaType: tipoFinal, 
-                    fecha: serverTimestamp() // El reloj comienza a correr AHORA
-                });
-                
-                e.target.value = ""; // Limpiar el input
-            } catch (error) {
-                console.error(error); alert("Hubo un error al subir tu estado.");
-            } finally {
-                document.getElementById("mensaje-subiendo-historia").style.display = "none";
-            }
-        });
-
-        // 3. Escuchar los estados en tiempo real (y filtrar los de hace +24h)
+        // --- 1. ESCUCHAR Y DIBUJAR ESTADOS EFÍMEROS ---
         function escucharHistorias() {
             const qHistorias = query(collection(db, "estados"), orderBy("fecha", "asc"));
-            
             onSnapshot(qHistorias, (snapshot) => {
-                const contenedorAmigos = document.getElementById("lista-historias-amigos");
-                contenedorAmigos.innerHTML = "";
-                const ahora = new Date().getTime();
-                const historiasActivas = {}; 
+                const contenedorAmigos = document.getElementById("lista-historias-amigos"); contenedorAmigos.innerHTML = "";
+                const ahora = new Date().getTime(); diccionarioHistorias = {}; 
 
                 snapshot.forEach(docSnap => {
                     const estado = docSnap.data();
                     if (estado.fecha) {
                         const tiempoEstado = estado.fecha.toMillis();
-                        const diferenciaHoras = (ahora - tiempoEstado) / (1000 * 60 * 60);
-                        
-                         // EL RELOJ DE ARENA: Solo pasan los estados de menos de 24 horas
-                        if (diferenciaHoras < 24) {
-                            if (!historiasActivas[estado.autor]) {
-                                historiasActivas[estado.autor] = {
-                                    autor: estado.autor, autorNombre: estado.autorNombre, autorFoto: estado.autorFoto, estados: []
-                                };
-                            }
-                            historiasActivas[estado.autor].estados.push(estado);
+                        if ((ahora - tiempoEstado) / (1000 * 60 * 60) < 24) { // Menos de 24 hrs
+                            if (!diccionarioHistorias[estado.autor]) { diccionarioHistorias[estado.autor] = { autor: estado.autor, autorNombre: estado.autorNombre, autorFoto: estado.autorFoto, estados: [] }; }
+                            diccionarioHistorias[estado.autor].estados.push(estado);
                         }
                     }
                 });
 
-                // Reiniciar mi aro por si mis estados ya vencieron
                 document.getElementById("mi-aro-historia").classList.remove("activa");
-
-                // Dibujar circulitos VIP
-                Object.values(historiasActivas).forEach(usuario => {
+                
+                Object.values(diccionarioHistorias).forEach(usuario => {
                     if (usuario.autor !== usuarioActual.email) {
-                        const item = document.createElement("div");
-                        item.className = "historia-item";
+                        const item = document.createElement("div"); item.className = "historia-item";
+                        // Truco para abrir el visor al hacer clic
+                        item.onclick = () => abrirVisor(usuario.autor);
                         let avatar = usuario.autorFoto ? `<img src="${usuario.autorFoto}" class="historia-avatar">` : `<div class="historia-avatar">${usuario.autorNombre.charAt(0).toUpperCase()}</div>`;
-                        
-                        item.innerHTML = `
-                            <div class="historia-avatar-contenedor activa">
-                                ${avatar}
-                            </div>
-                            <span class="historia-nombre">${usuario.autorNombre.split(" ")[0]}</span>
-                        `;
+                        item.innerHTML = `<div class="historia-avatar-contenedor activa">${avatar}</div><span class="historia-nombre">${usuario.autorNombre.split(" ")[0]}</span>`;
                         contenedorAmigos.appendChild(item);
-                    } else {
-                        // Si yo tengo estados vivos, encender mi aro de colores
-                        document.getElementById("mi-aro-historia").classList.add("activa");
-                    }
+                    } else { document.getElementById("mi-aro-historia").classList.add("activa"); }
                 });
             });
         }
 
+        document.getElementById("mi-aro-historia").addEventListener("click", () => {
+            if(document.getElementById("mi-aro-historia").classList.contains("activa")) { abrirVisor(usuarioActual.email); }
+        });
+        document.getElementById("btn-mi-historia").querySelector(".btn-agregar-icono").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("archivo-historia").click(); });
+
+        document.getElementById("archivo-historia").addEventListener("change", async (e) => {
+            const archivoMedia = e.target.files[0]; if (!archivoMedia) return;
+            document.getElementById("mensaje-subiendo-historia").style.display = "block"; let urlFinal = null; let tipoFinal = null;
+            try {
+                if (archivoMedia.type.startsWith("image/")) { const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); } 
+                else if (archivoMedia.type.startsWith("video/")) { const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
+                await addDoc(collection(db, "estados"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, mediaUrl: urlFinal, mediaType: tipoFinal, fecha: serverTimestamp() }); e.target.value = ""; 
+            } catch (error) { alert("Error al subir estado."); } finally { document.getElementById("mensaje-subiendo-historia").style.display = "none"; }
+        });
+
+        // --- 2. LÓGICA DEL VISOR (PANTALLA COMPLETA) ---
+        function abrirVisor(correoAutor) {
+            autorViendo = correoAutor;
+            const usuarioData = diccionarioHistorias[correoAutor];
+            if(!usuarioData || usuarioData.estados.length === 0) return;
+
+            // Tomamos el último estado subido para simplicidad
+            const estadoActual = usuarioData.estados[usuarioData.estados.length - 1];
+            
+            // Configuramos la interfaz
+            document.getElementById("visor-estados").style.display = "flex";
+            document.getElementById("visor-nombre").innerText = usuarioData.autorNombre;
+            document.getElementById("visor-avatar").src = usuarioData.autorFoto || "https://i.ibb.co/Vv0F8sP/default-avatar.png";
+            
+            // Escondemos la barra de comentar si es NUESTRO estado
+            if(correoAutor === usuarioActual.email) { document.getElementById("visor-interaccion").style.display = "none"; } 
+            else { document.getElementById("visor-interaccion").style.display = "flex"; document.getElementById("input-respuesta-estado").value = ""; }
+
+            const cajaContenido = document.getElementById("visor-contenido");
+            const barra = document.getElementById("barra-progreso");
+            cajaContenido.innerHTML = ""; barra.style.width = "0%"; barra.style.transition = "none";
+
+            if(estadoActual.mediaType === "video") {
+                const vid = document.createElement("video"); vid.className = "visor-media-video"; vid.src = estadoActual.mediaUrl; vid.autoplay = true; vid.playsInline = true;
+                cajaContenido.appendChild(vid);
+                vid.onloadedmetadata = () => { setTimeout(() => { barra.style.transition = `width ${vid.duration}s linear`; barra.style.width = "100%"; }, 50); };
+                vid.onended = cerrarVisor;
+            } else {
+                const img = document.createElement("img"); img.className = "visor-media-img"; img.src = estadoActual.mediaUrl;
+                cajaContenido.appendChild(img);
+                setTimeout(() => { barra.style.transition = `width 5s linear`; barra.style.width = "100%"; }, 50);
+                timeoutVisor = setTimeout(cerrarVisor, 5000); // Cierra en 5 segundos
+            }
+        }
+
+        function cerrarVisor() {
+            document.getElementById("visor-estados").style.display = "none";
+            document.getElementById("visor-contenido").innerHTML = ""; // Limpiar video/foto
+            if(timeoutVisor) clearTimeout(timeoutVisor);
+            autorViendo = null;
+        }
+
+        document.getElementById("btn-cerrar-visor").addEventListener("click", cerrarVisor);
+
+        // --- 3. RESPONDER ESTADOS (SE VA A LA CAMPANITA) ---
+        async function enviarRespuestaEstado(mensaje, esEmoji = false) {
+            if(!autorViendo || autorViendo === usuarioActual.email) return;
+            try {
+                let textoNoti = esEmoji ? `Reaccionó a tu estado: ${mensaje}` : `Respondió a tu estado: "${mensaje}"`;
+                await addDoc(collection(db, "notificaciones"), {
+                    para: autorViendo, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien",
+                    tipo: "respuesta_estado", mensajeTexto: textoNoti, leida: false, fecha: serverTimestamp()
+                });
+                
+                // Mostrar "Enviado ✅"
+                const toast = document.getElementById("toast-enviado");
+                toast.style.display = "block"; setTimeout(() => { toast.style.display = "none"; cerrarVisor(); }, 1500);
+            } catch (err) { console.error(err); }
+        }
+
+        document.getElementById("btn-enviar-respuesta").addEventListener("click", () => {
+            const txt = document.getElementById("input-respuesta-estado").value.trim();
+            if(txt) enviarRespuestaEstado(txt, false);
+        });
+
+        document.querySelectorAll(".visor-emoji").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const emoji = e.target.getAttribute("data-emoji");
+                enviarRespuestaEstado(emoji, true);
+            });
+        });
 
         // --- CÓDIGO VIEJO (NO SE TOCÓ) ---
         document.getElementById("buscador-muro").addEventListener("input", (e) => {
@@ -333,16 +352,14 @@
                 if (notis.length === 0) { listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; }
                 notis.forEach(noti => {
                     const item = document.createElement("div"); item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`; item.dataset.id = noti.id;
-                    let texto = ""; if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`; if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`; item.innerHTML = texto; listaDiv.appendChild(item);
+                    let texto = ""; if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`; if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`; if (noti.tipo === "respuesta_estado") texto = `<strong>${noti.deNombre}</strong> ${noti.mensajeTexto}`; item.innerHTML = texto; listaDiv.appendChild(item);
                 });
             });
         }
 
         document.getElementById("btn-campanita").addEventListener("click", (e) => {
             e.stopPropagation(); const panel = document.getElementById("panel-notificaciones"); panel.style.display = panel.style.display === "block" ? "none" : "block";
-            if (panel.style.display === "block") {
-                document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => { try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){} });
-            }
+            if (panel.style.display === "block") { document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => { try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){} }); }
         });
 
         const btnPublicar = document.getElementById("btn-publicar");
@@ -353,15 +370,10 @@
             let urlFinal = null; let tipoFinal = null;
             try {
                 if (archivoMedia) {
-                    if (archivoMedia.type.startsWith("image/")) {
-                        const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error();
-                    } else if (archivoMedia.type.startsWith("video/")) {
-                        const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error();
-                    }
+                    if (archivoMedia.type.startsWith("image/")) { const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error();
+                    } else if (archivoMedia.type.startsWith("video/")) { const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
                 }
-                await addDoc(collection(db, "publicaciones"), {
-                    autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: texto, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: []
-                });
+                await addDoc(collection(db, "publicaciones"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: texto, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
             } catch (error) { console.error(error); alert("Error al subir la publicación."); } finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; }
         });
