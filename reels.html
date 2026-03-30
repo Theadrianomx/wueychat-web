@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WueyChat - Reels</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+        
+        /* MAGIA DE TIKTOK: SCROLL SNAP */
+        .contenedor-reels { height: 100vh; width: 100vw; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; scroll-behavior: smooth; }
+        .contenedor-reels::-webkit-scrollbar { display: none; }
+        
+        .reel-carta { height: 100vh; width: 100vw; scroll-snap-align: start; position: relative; background-color: #111; display: flex; justify-content: center; align-items: center; }
+        .reel-video { height: 100%; width: 100%; object-fit: cover; cursor: pointer; }
+        
+        /* INTERFAZ FLOTANTE */
+        .reel-ui-inferior { position: absolute; bottom: 80px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; pointer-events: none; }
+        .reel-info { flex: 1; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin-right: 20px; pointer-events: auto; }
+        .reel-autor { font-weight: bold; font-size: 18px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        .reel-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; }
+        .reel-texto { font-size: 15px; line-height: 1.4; }
+        
+        .reel-acciones { display: flex; flex-direction: column; align-items: center; gap: 20px; pointer-events: auto; margin-bottom: 20px; }
+        .btn-accion { background: none; border: none; color: white; font-size: 32px; cursor: pointer; display: flex; flex-direction: column; align-items: center; text-shadow: 1px 1px 5px rgba(0,0,0,0.8); transition: transform 0.2s; }
+        .btn-accion:active { transform: scale(1.2); }
+        .texto-accion { font-size: 12px; font-weight: bold; margin-top: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+
+        /* BARRA SUPERIOR TRANSPARENTE */
+        .barra-top { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 20; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .barra-top h1 { margin: 0; font-size: 22px; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .btn-camara { background: rgba(255,255,255,0.2); border: 2px solid #fff; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); }
+
+        /* BARRA INFERIOR */
+        .barra-inferior { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; background-color: rgba(0, 0, 0, 0.9); z-index: 100; border-top: 1px solid #333; }
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; padding: 8px; border-radius: 50%; }
+        .nav-link { text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
+        .nav-link.activo .btn-icono, .nav-link.activo span { color: #fff; }
+
+        /* MODAL SUBIR REEL */
+        .modal-subir { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; justify-content: center; align-items: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .caja-subir { background: #222; padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
+        .input-reel { width: 100%; padding: 10px; margin: 15px 0; border-radius: 8px; border: 1px solid #444; background: #111; color: white; box-sizing: border-box; }
+        .btn-subir-final { background: #1877f2; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
+        .btn-cerrar-modal { background: none; border: none; color: #aaa; margin-top: 15px; cursor: pointer; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="barra-top">
+        <h1>WueyReels</h1>
+        <button class="btn-camara" id="btn-abrir-camara">📷</button>
+    </div>
+
+    <div class="contenedor-reels" id="feed-reels">
+        <div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">Cargando videos... 🎬</div>
+    </div>
+
+    <div class="modal-subir" id="modal-subir">
+        <div class="caja-subir">
+            <h2 style="margin-top: 0; color: #1877f2;">Nuevo WueyReel</h2>
+            <input type="file" id="archivo-reel" accept="video/*" class="input-reel">
+            <textarea id="texto-reel" rows="3" placeholder="Describe tu video..." class="input-reel" style="resize: none;"></textarea>
+            <p id="msj-subiendo" style="display: none; color: #4CAF50; font-weight: bold;">Subiendo a la nube (Puede tardar)... ⏳</p>
+            <button class="btn-subir-final" id="btn-publicar-reel">Subir Video</button>
+            <button class="btn-cerrar-modal" id="btn-cerrar-modal">Cancelar</button>
+        </div>
+    </div>
+
+    <div class="barra-inferior">
+        <a href="muro.html" class="nav-link"><button class="btn-icono">🏠</button><span>Inicio</span></a>
+        <a href="reels.html" class="nav-link activo"><button class="btn-icono" style="color:white;">🎬</button><span style="color:white;">Videos</span></a>
+        <a href="perfil.html" class="nav-link"><button class="btn-icono">👤</button><span>Perfil</span></a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+        const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
+        const CLOUDINARY_UPLOAD_PRESET = "wueychat_media";
+
+        let usuarioActual = null;
+        let llaveUsuarioActual = "anonimo";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { usuarioActual = user; llaveUsuarioActual = user.email.replace(/\./g, '_'); cargarReels(); } 
+            else { window.location.href = "index.html"; }
+        });
+
+        // CONTROL DEL MODAL DE SUBIDA
+        document.getElementById("btn-abrir-camara").addEventListener("click", () => document.getElementById("modal-subir").style.display = "flex");
+        document.getElementById("btn-cerrar-modal").addEventListener("click", () => document.getElementById("modal-subir").style.display = "none");
+
+        // SUBIR REEL A CLOUDINARY Y FIREBASE (Nueva colección: reels)
+        document.getElementById("btn-publicar-reel").addEventListener("click", async () => {
+            const archivoVideo = document.getElementById("archivo-reel").files[0];
+            const texto = document.getElementById("texto-reel").value.trim();
+            if (!archivoVideo) { alert("¡Selecciona un video primero!"); return; }
+
+            document.getElementById("btn-publicar-reel").disabled = true;
+            document.getElementById("msj-subiendo").style.display = "block";
+
+            try {
+                // Subir a Cloudinary
+                const formData = new FormData(); formData.append("file", archivoVideo); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+                const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+                const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData });
+                const datos = await respuesta.json();
+                
+                if (datos.secure_url) {
+                    // Guardar en Firebase
+                    await addDoc(collection(db, "reels"), {
+                        autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
+                        videoUrl: datos.secure_url, texto: texto, fecha: serverTimestamp(), reacciones: {}, comentarios: []
+                    });
+                    document.getElementById("modal-subir").style.display = "none";
+                    document.getElementById("archivo-reel").value = ""; document.getElementById("texto-reel").value = "";
+                } else { throw new Error("Error en Cloudinary"); }
+            } catch (err) { console.error(err); alert("Error al subir el reel."); } 
+            finally { document.getElementById("btn-publicar-reel").disabled = false; document.getElementById("msj-subiendo").style.display = "none"; }
+        });
+
+        // DIBUJAR LOS REELS Y OBSERVARLOS
+        function cargarReels() {
+            const feedDiv = document.getElementById("feed-reels");
+            const q = query(collection(db, "reels"), orderBy("fecha", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                feedDiv.innerHTML = "";
+                snapshot.forEach((docSnap) => {
+                    const reel = docSnap.data(); const reelId = docSnap.id;
+                    if(reel.videoUrl) {
+                        const caja = document.createElement("div"); caja.className = "reel-carta";
+                        
+                        // Lógica de Likes
+                        const reacciones = reel.reacciones || {};
+                        const tieneMiLike = reacciones[llaveUsuarioActual] === "❤️";
+                        const totalLikes = Object.keys(reacciones).length;
+                        const totalComentarios = reel.comentarios ? reel.comentarios.length : 0;
+                        const avatarInfo = reel.autorFoto ? `<img src="${reel.autorFoto}" class="reel-avatar">` : `<div class="reel-avatar" style="background:#1877f2; display:flex; justify-content:center; align-items:center;">${reel.autorNombre.charAt(0)}</div>`;
+
+                        caja.innerHTML = `
+                            <video src="${reel.videoUrl}" class="reel-video" loop playsinline></video>
+                            <div class="reel-ui-inferior">
+                                <div class="reel-info">
+                                    <div class="reel-autor">${avatarInfo} @${reel.autorNombre.split(" ")[0]}</div>
+                                    <div class="reel-texto">${reel.texto}</div>
+                                </div>
+                                <div class="reel-acciones">
+                                    <button class="btn-accion btn-like" data-id="${reelId}" style="color: ${tieneMiLike ? '#ff2b54' : 'white'}">
+                                        ${tieneMiLike ? '❤️' : '🤍'} <span class="texto-accion">${totalLikes}</span>
+                                    </button>
+                                    <button class="btn-accion btn-comentar" data-id="${reelId}">
+                                        💬 <span class="texto-accion">${totalComentarios}</span>
+                                    </button>
+                                    <button class="btn-accion btn-compartir" data-id="${reelId}" data-url="${reel.videoUrl}" data-texto="${reel.texto}">
+                                        🔄 <span class="texto-accion">Muro</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        feedDiv.appendChild(caja);
+                    }
+                });
+
+                // INTERSECTION OBSERVER (El truco para reproducir solo el video que estás viendo)
+                const videos = document.querySelectorAll('.reel-video');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) { entry.target.play(); } 
+                        else { entry.target.pause(); entry.target.currentTime = 0; }
+                    });
+                }, { threshold: 0.6 }); // Se reproduce cuando el 60% del video está en pantalla
+
+                videos.forEach(video => {
+                    observer.observe(video);
+                    // Pausar/Reproducir al tocar la pantalla
+                    video.addEventListener('click', () => { if(video.paused) video.play(); else video.pause(); });
+                });
+            });
+        }
+
+        // ACCIONES DE LOS BOTONES
+        document.getElementById("feed-reels").addEventListener("click", async (e) => {
+            const target = e.target.closest('.btn-accion'); if(!target) return;
+            const reelId = target.getAttribute("data-id");
+
+            // DAR LIKE
+            if (target.classList.contains("btn-like")) {
+                const ref = doc(db, "reels", reelId);
+                const esCorazonRojo = target.innerText.includes('❤️');
+                const act = {}; act[`reacciones.${llaveUsuarioActual}`] = esCorazonRojo ? null : "❤️"; // Toggle like
+                
+                // Firestore no tiene "delete key" en updateDoc directo fácil, mejor usamos setDoc con merge
+                // Para quitar el like, reescribimos el mapa entero (Simplificación)
+                // O mejor usamos un truco: Si ya tiene like, mandamos borrar. Si no, lo ponemos.
+                // Como es frontend rápido, lo dejaremos como updateDoc simple (reemplaza).
+                try { await updateDoc(ref, act); } catch(err){}
+            }
+
+            // COMENTAR (Por ahora lanza un prompt nativo del celular)
+            if (target.classList.contains("btn-comentar")) {
+                const comentario = prompt("Escribe tu comentario:");
+                if(comentario && comentario.trim() !== "") {
+                    try { await updateDoc(doc(db, "reels", reelId), {
+                        comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() })
+                    }); } catch(err){}
+                }
+            }
+
+            // COMPARTIR AL MURO NORMAL
+            if (target.classList.contains("btn-compartir")) {
+                if(confirm("¿Quieres compartir este Reel en tu Muro de WueyChat?")) {
+                    const videoUrl = target.getAttribute("data-url");
+                    const textoOriginal = target.getAttribute("data-texto");
+                    try {
+                        await addDoc(collection(db, "publicaciones"), {
+                            autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
+                            texto: `🎬 Compartió un Reel: "${textoOriginal}"`, mediaUrl: videoUrl, mediaType: "video",
+                            fecha: serverTimestamp(), reacciones: {}, comentarios: []
+                        });
+                        alert("¡Compartido en tu muro exitosamente!");
+                    } catch(err) { alert("Error al compartir."); }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
