@@ -29,7 +29,6 @@
         @media (min-width: 500px) { .barra-superior h1 { display: block; } }
 
         .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
-
         .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 8px; border-radius: 50%; transition: transform 0.2s ease; }
         .btn-icono:active { transform: scale(0.9); }
         .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
@@ -94,11 +93,9 @@
         .emoji { cursor: pointer; font-size: 26px; }
         .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
         
-        /* BOTONES DE EDICIÓN Y ELIMINACIÓN */
         .seccion-derecha-botones { display: flex; gap: 8px; }
         .btn-eliminar, .btn-editar { background: none; border: none; font-weight: bold; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; transition: background 0.2s; }
-        .btn-eliminar { color: #ff4d4d; }
-        .btn-editar { color: var(--texto-secundario); }
+        .btn-eliminar { color: #ff4d4d; } .btn-editar { color: var(--texto-secundario); }
         .btn-eliminar:hover, .btn-editar:hover { background-color: var(--fondo); }
 
         .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
@@ -107,6 +104,8 @@
         .caja-escribir-comentario { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
         .input-comentario { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo); color: var(--texto-principal); font-size: 14px; }
         .btn-enviar-comentario { background-color: var(--color-primario); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .btn-borrar-comentario { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 12px; margin-left: 8px; opacity: 0.7; }
+        .btn-borrar-comentario:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -178,10 +177,10 @@
             <input type="file" id="archivo-historia" accept="image/*,video/*" style="display: none;">
             <div id="lista-historias-amigos" style="display: flex; gap: 15px;"></div>
         </div>
-        <p id="mensaje-subiendo-historia" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-bottom: 15px; font-weight: bold;">Subiendo estado (Se borrará en 24h)... ⏳</p>
+        <p id="mensaje-subiendo-historia" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-bottom: 15px; font-weight: bold;">Procesando magia... ⏳</p>
 
         <div class="contenedor-publicacion">
-            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente?"></textarea>
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente? Usa +rojo, +azul o #hashtags"></textarea>
             <div class="acciones-publicar">
                 <input type="file" id="archivo-publicacion" accept="image/*,video/*">
                 <button id="btn-publicar" class="btn-publicar">Publicar</button>
@@ -202,7 +201,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+
+                // IMPORTANTE: Agregamos getDoc y arrayRemove para poder borrar comentarios
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -214,6 +216,53 @@
 
         const btnTheme = document.getElementById('btn-theme'); const html = document.documentElement; let temaGuardado = 'light'; try { temaGuardado = localStorage.getItem('theme') || 'light'; } catch(e) {} html.setAttribute('data-theme', temaGuardado); btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
         btnTheme.addEventListener('click', () => { const nuevoTema = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; html.setAttribute('data-theme', nuevoTema); try { localStorage.setItem('theme', nuevoTema); } catch(e) {} btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙'; });
+
+        // --- SISTEMA 1: FORMATEADOR DE TEXTO MÁGICO (COLORES Y HASHTAGS) ---
+        function formatearTexto(texto) {
+            if (!texto) return "";
+            // Evitar inyección HTML básica
+            let limpio = texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            // Reemplazar Hashtags por azul
+            limpio = limpio.replace(/(^|\s)(#[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ]+)/g, '$1<span style="color: var(--color-primario); font-weight: bold; cursor:pointer;">$2</span>');
+            
+            // Colores Mágicos: Busca +rojo, +azul, etc., lo vuelve invisible y pinta lo que sigue
+            const colores = { rojo: '#ff4d4d', azul: '#1877f2', verde: '#4CAF50', amarillo: '#FFC107', naranja: '#FF9800', morado: '#9C27B0', normal: 'inherit' };
+            
+            let lineas = limpio.split('\n');
+            let parseado = lineas.map(linea => {
+                let conSpans = linea.replace(/\+(rojo|azul|verde|amarillo|naranja|morado|normal)\s*/gi, (match, color) => {
+                    return `</span><span style="color: ${colores[color.toLowerCase()]}; font-weight: bold;">`;
+                });
+                return `<span>${conSpans}</span>`; // Encapsula la línea
+            });
+            
+            return parseado.join('<br>').replace(/<span><\/span>/g, '');
+        }
+
+        // --- SISTEMA 2: COMPRESORA DE IMÁGENES (AHORRO DE DATOS) ---
+        function comprimirImagen(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let MAX_WIDTH = 800; let MAX_HEIGHT = 800; let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            const archivoComprimido = new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() });
+                            resolve(archivoComprimido);
+                        }, 'image/jpeg', 0.8); // 80% de calidad = súper ligero
+                    };
+                };
+            });
+        }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -255,13 +304,22 @@
         document.getElementById("btn-mi-historia").querySelector(".btn-agregar-icono").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("archivo-historia").click(); });
 
         document.getElementById("archivo-historia").addEventListener("change", async (e) => {
-            const archivoMedia = e.target.files[0]; if (!archivoMedia) return;
+            let archivoMedia = e.target.files[0]; if (!archivoMedia) return;
             document.getElementById("mensaje-subiendo-historia").style.display = "block"; let urlFinal = null; let tipoFinal = null;
             try {
-                if (archivoMedia.type.startsWith("image/")) { const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); } 
-                else if (archivoMedia.type.startsWith("video/")) { const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
+                if (archivoMedia.type.startsWith("image/")) { 
+                    document.getElementById("mensaje-subiendo-historia").innerText = "Comprimiendo imagen... 🗜️";
+                    archivoMedia = await comprimirImagen(archivoMedia); // APLICAR COMPRESIÓN
+                    document.getElementById("mensaje-subiendo-historia").innerText = "Subiendo estado... 🚀";
+                    const formData = new FormData(); formData.append("image", archivoMedia); 
+                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); 
+                } 
+                else if (archivoMedia.type.startsWith("video/")) { 
+                    document.getElementById("mensaje-subiendo-historia").innerText = "Procesando video... 🎬";
+                    const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); 
+                }
                 await addDoc(collection(db, "estados"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, mediaUrl: urlFinal, mediaType: tipoFinal, fecha: serverTimestamp() }); e.target.value = ""; 
-            } catch (error) { alert("Error al subir estado."); } finally { document.getElementById("mensaje-subiendo-historia").style.display = "none"; }
+            } catch (error) { alert("Error al subir estado."); } finally { document.getElementById("mensaje-subiendo-historia").style.display = "none"; document.getElementById("mensaje-subiendo-historia").innerText = "Procesando magia... ⏳"; }
         });
 
         // --- VISOR HISTORIAS ---
@@ -293,49 +351,37 @@
         document.getElementById("btn-enviar-respuesta").addEventListener("click", () => { const txt = document.getElementById("input-respuesta-estado").value.trim(); if(txt) enviarRespuestaEstado(txt, false); });
         document.querySelectorAll(".visor-emoji").forEach(btn => { btn.addEventListener("click", (e) => { const emoji = e.target.getAttribute("data-emoji"); enviarRespuestaEstado(emoji, true); }); });
 
-        // --- PUBLICACIONES NORMALES ---
-        document.getElementById("buscador-muro").addEventListener("input", (e) => {
-            const textoBuscado = e.target.value.toLowerCase(); const todasLasNotas = document.querySelectorAll(".post"); let notasVisibles = 0;
-            todasLasNotas.forEach(nota => { const contenidoNota = nota.textContent.toLowerCase(); if (contenidoNota.includes(textoBuscado)) { nota.style.display = "block"; notasVisibles++; } else { nota.style.display = "none"; } });
-            document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none";
-        });
-
-        function escucharNotificaciones() {
-            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
-            onSnapshot(qNoti, (snapshot) => {
-                const listaDiv = document.getElementById("lista-notificaciones"); const puntoRojo = document.getElementById("punto-rojo");
-                listaDiv.innerHTML = ""; let noLeidas = 0; let notis = [];
-                snapshot.forEach(docSnap => { const noti = docSnap.data(); noti.id = docSnap.id; if(noti.fecha) { notis.push(noti); } if (!noti.leida) noLeidas++; });
-                notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis()); puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
-                if (notis.length === 0) { listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; }
-                notis.forEach(noti => {
-                    const item = document.createElement("div"); item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`; item.dataset.id = noti.id;
-                    let texto = ""; if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`; if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`; if (noti.tipo === "respuesta_estado") texto = `<strong>${noti.deNombre}</strong> ${noti.mensajeTexto}`; item.innerHTML = texto; listaDiv.appendChild(item);
-                });
-            });
-        }
-
-        document.getElementById("btn-campanita").addEventListener("click", (e) => {
-            e.stopPropagation(); const panel = document.getElementById("panel-notificaciones"); panel.style.display = panel.style.display === "block" ? "none" : "block";
-            if (panel.style.display === "block") { document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => { try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){} }); }
-        });
-
+        // --- PUBLICAR EN EL MURO ---
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
-            const texto = document.getElementById("texto-publicacion").value.trim(); const archivoMedia = document.getElementById("archivo-publicacion").files[0];
+            const texto = document.getElementById("texto-publicacion").value.trim(); 
+            let archivoMedia = document.getElementById("archivo-publicacion").files[0];
             if (texto === "" && !archivoMedia) return;
+            
             btnPublicar.disabled = true; document.getElementById("mensaje-publicando").style.display = "block";
             let urlFinal = null; let tipoFinal = null;
             try {
                 if (archivoMedia) {
-                    if (archivoMedia.type.startsWith("image/")) { const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error();
-                    } else if (archivoMedia.type.startsWith("video/")) { const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
+                    if (archivoMedia.type.startsWith("image/")) { 
+                        document.getElementById("mensaje-publicando").innerText = "Comprimiendo imagen... 🗜️";
+                        archivoMedia = await comprimirImagen(archivoMedia); // APLICAR COMPRESIÓN
+                        document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀";
+                        const formData = new FormData(); formData.append("image", archivoMedia); 
+                        const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error();
+                    } 
+                    else if (archivoMedia.type.startsWith("video/")) { 
+                        document.getElementById("mensaje-publicando").innerText = "Procesando video en Cloudinary... 🎬";
+                        const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); 
+                    }
                 }
+                
+                document.getElementById("mensaje-publicando").innerText = "Guardando... 📝";
                 await addDoc(collection(db, "publicaciones"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: texto, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
-            } catch (error) { console.error(error); alert("Error al subir la publicación."); } finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; }
+            } catch (error) { console.error(error); alert("Error al subir la publicación."); } 
+            finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀"; }
         });
-
+        // --- DIBUJAR MURO ---
         function cargarPublicaciones() {
             const feedDiv = document.getElementById("feed"); const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
             onSnapshot(q, (snapshot) => {
@@ -348,18 +394,30 @@
                             let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`;
                             let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`;
                             
-                            // NUEVO: Agregamos un ID al texto para poder leerlo fácilmente al Editar
-                            if (post.texto) htmlContenido += `<div class="post-texto" id="texto-post-${postId}">${post.texto}</div>`;
+                            // APLICAR COLORES Y HASHTAGS AL TEXTO PRINCIPAL
+                            if (post.texto) htmlContenido += `<div class="post-texto">${formatearTexto(post.texto)}</div>`;
                             
                             const urlArchivo = post.mediaUrl || post.imagenUrl; const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null);
                             if (urlArchivo) { if (tipoArchivo === "video") { htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`; } else { htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`; } }
                             const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null; for (const [correo, emoji] of Object.entries(reacciones)) { conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1; if (correo === llaveUsuarioActual) miReaccionActual = emoji; } const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   '); 
                             
-                            // NUEVO: Botones de Editar y Eliminar agrupados
-                            let botonesAutorHTML = post.autor === usuarioActual.email ? `<div class="seccion-derecha-botones"><button class="btn-editar" data-id="${postId}">✏️</button><button class="btn-eliminar" data-id="${postId}">🗑️</button></div>` : "";
+                            // Guardamos el texto crudo en un data-attribute (para poder editarlo con los códigos +rojo)
+                            let textoRAW = post.texto ? post.texto.replace(/"/g, '&quot;') : "";
+                            let botonesAutorHTML = post.autor === usuarioActual.email ? `<div class="seccion-derecha-botones"><button class="btn-editar" data-id="${postId}" data-raw="${textoRAW}">✏️</button><button class="btn-eliminar" data-id="${postId}">🗑️</button></div>` : "";
                             
                             htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍" data-autor="${post.autor}">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️" data-autor="${post.autor}">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂" data-autor="${post.autor}">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮" data-autor="${post.autor}">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢" data-autor="${post.autor}">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonesAutorHTML}</div>`;
-                            let htmlComentarios = `<div class="seccion-comentarios">`; if (post.comentarios && post.comentarios.length > 0) { post.comentarios.forEach(comentario => { htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${comentario.texto}</div></div>`; }); } htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`;
+                            
+                            // APLICAR COLORES AL DIBUJAR COMENTARIOS Y BOTÓN DE BORRAR
+                            let htmlComentarios = `<div class="seccion-comentarios">`; 
+                            if (post.comentarios && post.comentarios.length > 0) { 
+                                post.comentarios.forEach((comentario, index) => { 
+                                    let puedeBorrarComentario = (comentario.autor === usuarioActual.email) || (post.autor === usuarioActual.email);
+                                    let btnBorrarComentarioHTML = puedeBorrarComentario ? `<button class="btn-borrar-comentario" data-postid="${postId}" data-index="${index}">✖</button>` : "";
+                                    htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${formatearTexto(comentario.texto)} ${btnBorrarComentarioHTML}</div></div>`; 
+                                }); 
+                            } 
+                            htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`;
+                            
                             htmlContenido += htmlComentarios; cajaPost.innerHTML = htmlContenido; 
                             if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { cajaPost.style.display = "none"; } feedDiv.appendChild(cajaPost);
                         }
@@ -368,7 +426,7 @@
             });
         }
 
-        // --- MANEJO DE CLICS EN EL FEED (Incluye Editar) ---
+        // --- MANEJO DE CLICS DEL MURO ---
         document.getElementById("feed").addEventListener("click", async (e) => {
             // Reacciones
             if (e.target.classList.contains("emoji")) {
@@ -376,24 +434,37 @@
                 const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido;
                 try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) { console.error(err); }
             }
-            // Eliminar
+            // Eliminar Post
             if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { 
                 const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar');
                 const postId = btn.getAttribute("data-id"); 
                 if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { console.error(err); } } 
             }
-            // NUEVO: Abrir modal de Editar
+            // Editar Post
             if (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar')) {
                 const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar');
                 const postId = btn.getAttribute("data-id");
-                
-                // Buscar el texto actual leyendo el div que creamos
-                const divTexto = document.getElementById(`texto-post-${postId}`);
-                const textoActual = divTexto ? divTexto.innerText : "";
-                
+                const textoRAW = btn.getAttribute("data-raw"); // Leemos el texto crudo (+rojo Hola)
                 document.getElementById("id-post-editar").value = postId;
-                document.getElementById("texto-editar").value = textoActual;
+                document.getElementById("texto-editar").value = textoRAW;
                 document.getElementById("modal-editar").style.display = "flex";
+            }
+            // SISTEMA 3: ELIMINAR COMENTARIO
+            if (e.target.classList.contains("btn-borrar-comentario")) {
+                const postId = e.target.getAttribute("data-postid");
+                const index = e.target.getAttribute("data-index");
+                if (confirm("¿Eliminar este comentario?")) {
+                    try {
+                        const docRef = doc(db, "publicaciones", postId);
+                        const docSnap = await getDoc(docRef);
+                        if (docSnap.exists()) {
+                            const post = docSnap.data();
+                            const comentarioAEliminar = post.comentarios[index];
+                            // Borramos exactamente ese objeto del arreglo en Firebase
+                            await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) });
+                        }
+                    } catch (err) { console.error("Error al borrar comentario", err); }
+                }
             }
             // Comentar
             if (e.target.classList.contains("btn-enviar-comentario")) {
@@ -407,32 +478,15 @@
             }
         });
         
-        // Comentar con la tecla Enter
         document.getElementById("feed").addEventListener("keypress", async (e) => { if (e.key === "Enter" && e.target.classList.contains("input-comentario")) { const postId = e.target.id.replace("input-comentario-", ""); const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); if(btnEnviar) btnEnviar.click(); } });
 
-        // --- NUEVO: LÓGICA DE GUARDAR Y CANCELAR EDICIÓN ---
-        document.getElementById("btn-cancelar-edicion").addEventListener("click", () => {
-            document.getElementById("modal-editar").style.display = "none";
-        });
-
+        // --- LÓGICA DE EDICIÓN ---
+        document.getElementById("btn-cancelar-edicion").addEventListener("click", () => document.getElementById("modal-editar").style.display = "none");
         document.getElementById("btn-guardar-edicion").addEventListener("click", async () => {
-            const postId = document.getElementById("id-post-editar").value;
-            const nuevoTexto = document.getElementById("texto-editar").value.trim();
-            const btnGuardar = document.getElementById("btn-guardar-edicion");
-            
-            btnGuardar.disabled = true;
-            btnGuardar.innerText = "Guardando...";
-            
-            try {
-                await updateDoc(doc(db, "publicaciones", postId), { texto: nuevoTexto });
-                document.getElementById("modal-editar").style.display = "none";
-            } catch (err) {
-                console.error("Error al editar:", err);
-                alert("Hubo un error al editar la nota.");
-            } finally {
-                btnGuardar.disabled = false;
-                btnGuardar.innerText = "Guardar Cambios";
-            }
+            const postId = document.getElementById("id-post-editar").value; const nuevoTexto = document.getElementById("texto-editar").value.trim(); const btnGuardar = document.getElementById("btn-guardar-edicion");
+            btnGuardar.disabled = true; btnGuardar.innerText = "Guardando...";
+            try { await updateDoc(doc(db, "publicaciones", postId), { texto: nuevoTexto }); document.getElementById("modal-editar").style.display = "none"; } 
+            catch (err) { alert("Error al editar."); } finally { btnGuardar.disabled = false; btnGuardar.innerText = "Guardar Cambios"; }
         });
     </script>
 </body>
