@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WueyChat - Reels</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
         
@@ -40,7 +41,9 @@
         .btn-cerrar-modal { background: none; border: none; color: #aaa; margin-top: 15px; cursor: pointer; font-size: 14px; }
 
         .toast-notificacion { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(24, 119, 242, 0.9); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 1000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(5px); font-size: 14px; }
-        .icono-sonido { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: rgba(255,255,255,0.7); pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; }
+        
+        /* Ícono de sonido modificado para los avisos del Autoplay */
+        .icono-sonido { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 30px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -60,8 +63,8 @@
         <div class="caja-subir">
             <h2 style="margin-top: 0; color: #1877f2;">Nuevo WueyReel</h2>
             <input type="file" id="archivo-reel" accept="video/*" class="input-reel">
-            <textarea id="texto-reel" rows="3" placeholder="Describe tu video..." class="input-reel" style="resize: none;"></textarea>
-            <button class="btn-subir-final" id="btn-publicar-reel">Publicar Video</button>
+            <textarea id="texto-reel" rows="3" placeholder="Describe tu video (se encriptará)..." class="input-reel" style="resize: none;"></textarea>
+            <button class="btn-subir-final" id="btn-publicar-reel">Publicar Seguro 🔒</button>
             <button class="btn-cerrar-modal" id="btn-cerrar-modal">Cancelar</button>
         </div>
     </div>
@@ -75,7 +78,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // IMPORTANTE: Ahora usamos la colección "publicaciones" en lugar de "reels"
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" };
@@ -84,8 +86,39 @@
         const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
         const CLOUDINARY_UPLOAD_PRESET = "wueychat_media";
 
-        let usuarioActual = null;
-        let llaveUsuarioActual = "anonimo";
+        // --- SISTEMA DE ENCRIPTACIÓN (AES) ---
+        const LLAVE_DIMENSIONAL = "C137_WueyChat_Secreto_2026"; 
+
+        function encriptar(textoCrudo) {
+            if(!textoCrudo) return "";
+            return CryptoJS.AES.encrypt(textoCrudo, LLAVE_DIMENSIONAL).toString();
+        }
+
+        function desencriptar(textoCifrado) {
+            if(!textoCifrado) return "";
+            try {
+                const bytes = CryptoJS.AES.decrypt(textoCifrado, LLAVE_DIMENSIONAL);
+                const original = bytes.toString(CryptoJS.enc.Utf8);
+                return original ? original : textoCifrado; 
+            } catch(e) { return textoCifrado; }
+        }
+
+        function formatearTexto(texto) {
+            if (!texto) return "";
+            let limpio = texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            limpio = limpio.replace(/(^|\s)(#[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ]+)/g, '$1<span style="color: var(--color-primario); font-weight: bold;">$2</span>');
+            const colores = { rojo: '#ff4d4d', azul: '#1877f2', verde: '#4CAF50', amarillo: '#FFC107', naranja: '#FF9800', morado: '#9C27B0', normal: 'inherit' };
+            let lineas = limpio.split('\n');
+            let parseado = lineas.map(linea => {
+                let conSpans = linea.replace(/\+(rojo|azul|verde|amarillo|naranja|morado|normal)\s*/gi, (match, color) => {
+                    return `</span><span style="color: ${colores[color.toLowerCase()]}; font-weight: bold;">`;
+                });
+                return `<span>${conSpans}</span>`; 
+            });
+            return parseado.join('<br>').replace(/<span><\/span>/g, '');
+        }
+
+        let usuarioActual = null; let llaveUsuarioActual = "anonimo";
 
         onAuthStateChanged(auth, (user) => {
             if (user) { usuarioActual = user; llaveUsuarioActual = user.email.replace(/\./g, '_'); cargarReels(); } 
@@ -95,15 +128,19 @@
         document.getElementById("btn-abrir-camara").addEventListener("click", () => document.getElementById("modal-subir").style.display = "flex");
         document.getElementById("btn-cerrar-modal").addEventListener("click", () => document.getElementById("modal-subir").style.display = "none");
 
-        // --- SUBIR REEL A LA COLECCIÓN "PUBLICACIONES" ---
+        // --- SUBIR REEL A "PUBLICACIONES" (ENCRIPTADO) ---
         document.getElementById("btn-publicar-reel").addEventListener("click", async () => {
             const archivoVideo = document.getElementById("archivo-reel").files[0];
-            const texto = document.getElementById("texto-reel").value.trim();
+            const textoCrudo = document.getElementById("texto-reel").value.trim();
             if (!archivoVideo) { alert("¡Selecciona un video primero!"); return; }
 
             document.getElementById("modal-subir").style.display = "none";
             const toast = document.getElementById("toast-subiendo");
             toast.innerText = "Subiendo Reel... ⏳"; toast.style.display = "block";
+            
+            // Encriptamos la descripción del video
+            const textoSeguro = encriptar(textoCrudo);
+
             document.getElementById("archivo-reel").value = ""; document.getElementById("texto-reel").value = "";
 
             try {
@@ -113,20 +150,18 @@
                 const datos = await respuesta.json();
                 
                 if (datos.secure_url) {
-                    // Magia: Lo guardamos en "publicaciones" marcándolo como "video"
                     await addDoc(collection(db, "publicaciones"), {
                         autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null,
-                        mediaUrl: datos.secure_url, mediaType: "video", texto: texto, fecha: serverTimestamp(), reacciones: {}, comentarios: []
+                        mediaUrl: datos.secure_url, mediaType: "video", texto: textoSeguro, fecha: serverTimestamp(), reacciones: {}, comentarios: []
                     });
-                    toast.innerText = "¡Video publicado en tu Muro y Reels! ✅"; setTimeout(() => toast.style.display = "none", 3000);
+                    toast.innerText = "¡Video seguro publicado! ✅"; setTimeout(() => toast.style.display = "none", 3000);
                 } else { throw new Error("Error en Cloudinary"); }
-            } catch (err) { console.error(err); toast.innerText = "❌ Error al subir el video"; setTimeout(() => toast.style.display = "none", 4000); } 
+            } catch (err) { console.error(err); toast.innerText = "❌ Error al subir"; setTimeout(() => toast.style.display = "none", 4000); } 
         });
 
-        // --- DIBUJAR SÓLO LOS VIDEOS DE LA COLECCIÓN "PUBLICACIONES" ---
+        // --- CARGAR REELS (DESENCRIPTAR Y AUTOPLAY CON AUDIO) ---
         function cargarReels() {
             const feedDiv = document.getElementById("feed-reels");
-            // Leemos todo el muro (publicaciones) ordenado por fecha
             const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
 
             onSnapshot(q, (snapshot) => {
@@ -135,28 +170,30 @@
 
                 snapshot.forEach((docSnap) => {
                     const post = docSnap.data(); const postId = docSnap.id;
-                    
-                    // FILTRO INTELIGENTE: Si tiene mediaType "video", o si el mediaUrl tiene formato de video
                     const esVideo = post.mediaType === "video" || (post.mediaUrl && post.mediaUrl.match(/\.(mp4|webm|ogg)$/i));
                     
                     if(esVideo) {
                         hayVideos = true;
                         const caja = document.createElement("div"); caja.className = "reel-carta";
                         
-                        // Ojo: las reacciones ahora leen de "publicaciones"
                         const reacciones = post.reacciones || {};
                         const tieneMiLike = reacciones[llaveUsuarioActual] === "❤️";
                         const totalLikes = Object.keys(reacciones).length;
                         const totalComentarios = post.comentarios ? post.comentarios.length : 0;
                         const avatarInfo = post.autorFoto ? `<img src="${post.autorFoto}" class="reel-avatar">` : `<div class="reel-avatar" style="background:#1877f2; display:flex; justify-content:center; align-items:center;">${post.autorNombre.charAt(0)}</div>`;
 
+                        // Desencriptar el texto de la publicación
+                        let textoDesencriptado = desencriptar(post.texto);
+                        let textoFormateado = formatearTexto(textoDesencriptado);
+
+                        // NOTA IMPORTANTE: El video NO TIENE "muted". Intenta sonar por defecto.
                         caja.innerHTML = `
-                            <video src="${post.mediaUrl}" class="reel-video" loop playsinline muted></video>
+                            <video src="${post.mediaUrl}" class="reel-video" loop playsinline></video>
                             <div class="icono-sonido">🔇</div>
                             <div class="reel-ui-inferior">
                                 <div class="reel-info">
                                     <div class="reel-autor">${avatarInfo} @${post.autorNombre.split(" ")[0]}</div>
-                                    <div class="reel-texto">${post.texto || ''}</div>
+                                    <div class="reel-texto">${textoFormateado}</div>
                                 </div>
                                 <div class="reel-acciones">
                                     <button class="btn-accion btn-like" data-id="${postId}" style="color: ${tieneMiLike ? '#ff2b54' : 'white'}">
@@ -173,21 +210,45 @@
                 });
 
                 if (!hayVideos) {
-                    feedDiv.innerHTML = `<div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">No hay videos en el muro aún. ¡Sube el primero! 🎬</div>`;
+                    feedDiv.innerHTML = `<div style="height: 100vh; display: flex; justify-content: center; align-items: center; color: #888;">No hay videos en la red aún. ¡Sube el primero! 🎬</div>`;
                     return;
                 }
 
-                // REPRODUCTOR INTELIGENTE
+                // --- SISTEMA DE RESCATE DE AUTOPLAY DE AUDIO ---
                 const videos = document.querySelectorAll('.reel-video');
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) { entry.target.play().catch(e => console.log("Autoplay bloqueado:", e)); } 
-                        else { entry.target.pause(); entry.target.currentTime = 0; }
+                        if (entry.isIntersecting) { 
+                            // Intentar iniciar CON SONIDO
+                            entry.target.muted = false; 
+                            const promesaPlay = entry.target.play();
+                            
+                            if (promesaPlay !== undefined) {
+                                promesaPlay.catch(error => {
+                                    // Si el navegador bloquea el audio, silenciamos para evitar que se congele
+                                    console.log("Navegador bloqueó el audio. Rescatando video...");
+                                    entry.target.muted = true;
+                                    entry.target.play(); 
+                                    
+                                    // Mostramos el aviso "🔇 Toca para audio"
+                                    const icono = entry.target.nextElementSibling;
+                                    icono.innerText = "🔇 Toca para activar audio";
+                                    icono.style.opacity = "1";
+                                    setTimeout(() => { icono.style.opacity = "0"; }, 3500);
+                                });
+                            }
+                        } 
+                        else { 
+                            entry.target.pause(); 
+                            entry.target.currentTime = 0; 
+                        }
                     });
                 }, { threshold: 0.6 });
 
                 videos.forEach(video => {
                     observer.observe(video);
+                    
+                    // Control manual al tocar
                     video.addEventListener('click', () => { 
                         video.muted = !video.muted;
                         const icono = video.nextElementSibling;
@@ -199,7 +260,7 @@
             });
         }
 
-        // ACCIONES DE BOTONES (Conectados a la colección "publicaciones")
+        // ACCIONES DE BOTONES
         document.getElementById("feed-reels").addEventListener("click", async (e) => {
             const target = e.target.closest('.btn-accion'); if(!target) return;
             const postId = target.getAttribute("data-id");
@@ -212,9 +273,10 @@
             }
 
             if (target.classList.contains("btn-comentar")) {
-                const comentario = prompt("Escribe tu comentario:");
-                if(comentario && comentario.trim() !== "") {
-                    try { await updateDoc(doc(db, "publicaciones", postId), { comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentario.trim() }) }); } catch(err){}
+                const comentarioCrudo = prompt("Escribe tu comentario seguro:");
+                if(comentarioCrudo && comentarioCrudo.trim() !== "") {
+                    const comentarioSeguro = encriptar(comentarioCrudo); // Ciframos el comentario
+                    try { await updateDoc(doc(db, "publicaciones", postId), { comentarios: arrayUnion({ autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentarioSeguro }) }); } catch(err){}
                 }
             }
         });
