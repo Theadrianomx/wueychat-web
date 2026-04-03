@@ -3,83 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wueychat - Bienvenido</title>
+    <title>WueyChat - Conéctate</title>
     <style>
-        :root {
-            --fondo: #f0f2f5;
-            --fondo-carta: #ffffff;
-            --texto-principal: #1c1e21;
-            --texto-secundario: #606770;
-            --color-primario: #1877f2;
-            --color-hover: #166fe5;
-            --color-registro: #42b72a;
-            --color-registro-hover: #36a420;
-            --borde: #dddfe2;
-            --sombra: rgba(0, 0, 0, 0.1);
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; font-family: 'Poppins', sans-serif;
+            /* Fondo animado épico */
+            background: linear-gradient(-45deg, #1877f2, #9C27B0, #ff4d4d, #18191a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+            color: #fff;
         }
 
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--fondo); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: var(--texto-principal); }
-        
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-        .contenedor {
-            background-color: var(--fondo-carta); padding: 50px 40px; border-radius: 16px;
-            box-shadow: 0 8px 24px var(--sombra); text-align: center; width: 350px;
-            animation: popIn 0.5s ease-out; border: 1px solid var(--borde);
+        /* Efecto Cristal (Glassmorphism) */
+        .caja-cristal {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%; max-width: 380px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative; overflow: hidden;
+            transition: transform 0.3s ease;
         }
+
+        .logo-wueychat { font-size: 36px; font-weight: 800; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); letter-spacing: 1px; }
+        .subtitulo { font-size: 14px; color: rgba(255,255,255,0.8); margin-bottom: 30px; }
+
+        .selector-modo { display: flex; background: rgba(0,0,0,0.2); border-radius: 30px; margin-bottom: 25px; position: relative; }
+        .btn-modo { flex: 1; padding: 12px; border: none; background: transparent; color: white; font-weight: 600; cursor: pointer; z-index: 1; font-family: 'Poppins', sans-serif; transition: color 0.3s; }
         
-        h1 { color: var(--color-primario); margin-bottom: 5px; font-size: 42px; font-weight: 800; letter-spacing: -1.5px; margin-top: 0; }
-        p.subtitulo { color: var(--texto-secundario); margin-bottom: 30px; font-size: 18px; font-weight: 500; }
-        
-        input {
-            width: 100%; padding: 14px; margin: 10px 0; border: 1px solid var(--borde);
-            border-radius: 8px; box-sizing: border-box; font-size: 16px;
-            background-color: #f5f6f7; transition: all 0.2s ease;
+        /* La pastilla que se desliza */
+        .pastilla-activa {
+            position: absolute; top: 0; left: 0; height: 100%; width: 50%;
+            background: #1877f2; border-radius: 30px; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);
         }
-        input:focus { outline: none; border-color: var(--color-primario); background-color: white; box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2); }
-        
-        .btn-login {
-            width: 100%; padding: 14px; margin-top: 15px; background-color: var(--color-primario);
-            color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: bold;
-            cursor: pointer; transition: all 0.2s ease;
+
+        .formulario { display: none; flex-direction: column; gap: 15px; animation: fadeIn 0.5s ease; }
+        .formulario.activo { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .input-grupo { position: relative; width: 100%; text-align: left; }
+        .input-cristal {
+            width: 100%; padding: 15px 15px 15px 45px; border-radius: 12px;
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+            color: white; font-size: 15px; font-family: 'Poppins', sans-serif;
+            box-sizing: border-box; transition: all 0.3s; outline: none;
         }
-        .btn-login:hover { background-color: var(--color-hover); transform: translateY(-2px); }
-        .btn-login:active { transform: translateY(0); }
+        .input-cristal::placeholder { color: rgba(255,255,255,0.6); }
+        .input-cristal:focus { background: rgba(0,0,0,0.4); border-color: #1877f2; box-shadow: 0 0 10px rgba(24, 119, 242, 0.3); }
         
-        .linea-separadora { border-bottom: 1px solid var(--borde); margin: 25px 0; }
-        
-        .btn-registro {
-            padding: 14px 24px; background-color: var(--color-registro);
-            color: white; border: none; border-radius: 8px; font-size: 17px; font-weight: bold;
-            cursor: pointer; transition: all 0.2s ease;
+        .icono-input { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: rgba(255,255,255,0.7); }
+
+        .btn-principal {
+            background: #1877f2; color: white; border: none; padding: 15px; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
+            margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
         }
-        .btn-registro:hover { background-color: var(--color-registro-hover); transform: translateY(-2px); }
+        .btn-principal:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(24, 119, 242, 0.5); }
+        .btn-principal:active { transform: translateY(0); }
+        .btn-principal:disabled { background: #555; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .mensaje-error { color: #ff4d4d; font-size: 13px; font-weight: 600; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; display: none; margin-top: 10px; border: 1px solid rgba(255, 77, 77, 0.3); }
         
-        #mensaje { margin-top: 20px; font-size: 15px; font-weight: bold; min-height: 1.2em; }
+        /* Burbujas flotantes de fondo para más estilo */
+        .burbuja { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); animation: flotar 10s infinite ease-in-out; z-index: -1; }
+        .burbuja:nth-child(1) { width: 100px; height: 100px; top: -20px; left: -30px; animation-delay: 0s; }
+        .burbuja:nth-child(2) { width: 150px; height: 150px; bottom: -50px; right: -40px; animation-delay: 2s; background: rgba(24, 119, 242, 0.2); }
+        .burbuja:nth-child(3) { width: 60px; height: 60px; top: 50%; left: -20px; animation-delay: 4s; background: rgba(156, 39, 176, 0.2); }
+
+        @keyframes flotar { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(10deg); } }
     </style>
 </head>
 <body>
 
-    <div class="contenedor">
-        <h1>Wueychat</h1>
-        <p class="subtitulo">Conéctate premium con tus amigos.</p>
-        
-        <input type="text" id="nombre" placeholder="Tu Nombre (Solo para registro)">
-        <input type="email" id="email" placeholder="Correo electrónico" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        
-        <button id="btn-login" class="btn-login">Iniciar sesión</button>
-        <p id="mensaje"></p>
-        
-        <div class="linea-separadora"></div>
-        
-        <button id="btn-registrar" class="btn-registro">Crear cuenta nueva</button>
+    <div class="burbuja"></div>
+    <div class="burbuja"></div>
+    <div class="burbuja"></div>
+
+    <div class="caja-cristal">
+        <div class="logo-wueychat">WueyChat</div>
+        <div class="subtitulo">La nueva forma de conectar</div>
+
+        <div class="selector-modo">
+            <div class="pastilla-activa" id="pastilla"></div>
+            <button class="btn-modo" id="btn-tab-login">Entrar</button>
+            <button class="btn-modo" id="btn-tab-registro">Registro</button>
+        </div>
+
+        <div class="formulario activo" id="form-login">
+            <div class="input-grupo">
+                <span class="icono-input">📧</span>
+                <input type="email" id="login-email" class="input-cristal" placeholder="Tu correo electrónico">
+            </div>
+            <div class="input-grupo">
+                <span class="icono-input">🔒</span>
+                <input type="password" id="login-pass" class="input-cristal" placeholder="Tu contraseña">
+            </div>
+            <button class="btn-principal" id="btn-entrar">Iniciar Sesión</button>
+            <div class="mensaje-error" id="error-login"></div>
+        </div>
+
+        <div class="formulario" id="form-registro">
+            <div class="input-grupo">
+                <span class="icono-input">👤</span>
+                <input type="text" id="reg-nombre" class="input-cristal" placeholder="Tu nombre o apodo">
+            </div>
+            <div class="input-grupo">
+                <span class="icono-input">📧</span>
+                <input type="email" id="reg-email" class="input-cristal" placeholder="Correo electrónico">
+            </div>
+            <div class="input-grupo">
+                <span class="icono-input">🔒</span>
+                <input type="password" id="reg-pass" class="input-cristal" placeholder="Crea una contraseña">
+            </div>
+            <button class="btn-principal" id="btn-registrar">Crear mi cuenta</button>
+            <div class="mensaje-error" id="error-registro"></div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+        // Configuración exacta de WueyChat
         const firebaseConfig = {
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM",
             authDomain: "wueychat.firebaseapp.com",
@@ -93,56 +154,86 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        const mensajeDiv = document.getElementById("mensaje");
-        const inputNombre = document.getElementById("nombre");
-        const inputEmail = document.getElementById("email");
-        const inputPassword = document.getElementById("password");
-
-        // REGISTRAR
-        document.getElementById("btn-registrar").addEventListener("click", () => {
-            const nombre = inputNombre.value.trim();
-            const email = inputEmail.value.trim();
-            const password = inputPassword.value;
-
-            if(!email || !password || !nombre) {
-                mostrarMensaje("red", "✍️ Llena todo, incluido tu nombre VIP.");
-                return;
-            }
-
-            mostrarMensaje(document.body.style.getPropertyValue('--color-primario'), "✨ Creando tu espacio premium...");
-
-            createUserWithEmailAndPassword(auth, email, password)
-                .then(async (userCredential) => {
-                    await updateProfile(userCredential.user, { displayName: nombre });
-                    mostrarMensaje("green", "🎉 ¡Cuenta VIP creada! Vamos a configurarla...");
-                    setTimeout(() => { window.location.href = "perfil.html"; }, 1500);
-                })
-                .catch((error) => { mostrarMensaje("red", "❌ Error: " + error.message); });
+        // Si ya está logueado, lo manda directo al muro para no hacerle perder tiempo
+        onAuthStateChanged(auth, (user) => {
+            if (user) { window.location.href = "muro.html"; }
         });
 
-        // INICIAR SESIÓN
-        document.getElementById("btn-login").addEventListener("click", () => {
-            const email = inputEmail.value.trim();
-            const password = inputPassword.value;
+        // ANIMACIÓN DE LAS PESTAÑAS
+        const btnTabLogin = document.getElementById('btn-tab-login');
+        const btnTabRegistro = document.getElementById('btn-tab-registro');
+        const pastilla = document.getElementById('pastilla');
+        const formLogin = document.getElementById('form-login');
+        const formRegistro = document.getElementById('form-registro');
+        const errorLogin = document.getElementById('error-login');
+        const errorRegistro = document.getElementById('error-registro');
 
-            if(!email || !password) {
-                mostrarMensaje("red", "🔑 Correo y contraseña, por favor.");
-                return;
-            }
-
-            mostrarMensaje(document.body.style.getPropertyValue('--color-primario'), "🚀 Entrando a Wueychat...");
-
-            signInWithEmailAndPassword(auth, email, password)
-                .then(() => { window.location.href = "muro.html"; })
-                .catch(() => { mostrarMensaje("red", "❌ Datos incorrectos, wuey."); });
+        btnTabLogin.addEventListener('click', () => {
+            pastilla.style.transform = 'translateX(0%)';
+            formRegistro.classList.remove('activo');
+            setTimeout(() => formLogin.classList.add('activo'), 150);
+            errorLogin.style.display = 'none';
         });
 
-        function mostrarMensaje(color, texto) {
-            mensajeDiv.style.color = color;
-            mensajeDiv.innerText = texto;
-            // Pequeña animación de pulso en el mensaje
-            mensajeDiv.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
-        }
+        btnTabRegistro.addEventListener('click', () => {
+            pastilla.style.transform = 'translateX(100%)';
+            formLogin.classList.remove('activo');
+            setTimeout(() => formRegistro.classList.add('activo'), 150);
+            errorRegistro.style.display = 'none';
+        });
+
+        // LÓGICA DE INICIO DE SESIÓN
+        document.getElementById('btn-entrar').addEventListener('click', async (e) => {
+            const btn = e.target;
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            
+            if(!email || !pass) {
+                errorLogin.innerText = "Por favor, llena todos los campos.";
+                errorLogin.style.display = 'block'; return;
+            }
+
+            btn.disabled = true; btn.innerText = "Conectando... 🚀";
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                // Si sale bien, el onAuthStateChanged arriba lo enviará a muro.html
+            } catch (error) {
+                btn.disabled = false; btn.innerText = "Iniciar Sesión";
+                errorLogin.style.display = 'block';
+                if(error.code === 'auth/invalid-credential') errorLogin.innerText = "❌ Correo o contraseña incorrectos.";
+                else errorLogin.innerText = "❌ Hubo un error al entrar.";
+            }
+        });
+
+        // LÓGICA DE REGISTRO
+        document.getElementById('btn-registrar').addEventListener('click', async (e) => {
+            const btn = e.target;
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+
+            if(!nombre || !email || !pass) {
+                errorRegistro.innerText = "Faltan datos para crear tu cuenta.";
+                errorRegistro.style.display = 'block'; return;
+            }
+            if(pass.length < 6) {
+                errorRegistro.innerText = "La contraseña debe tener al menos 6 letras.";
+                errorRegistro.style.display = 'block'; return;
+            }
+
+            btn.disabled = true; btn.innerText = "Forjando perfil... 🛠️";
+            try {
+                const credencial = await createUserWithEmailAndPassword(auth, email, pass);
+                // Guardar el nombre de usuario
+                await updateProfile(credencial.user, { displayName: nombre });
+                // El onAuthStateChanged lo mandará a muro.html automáticamente
+            } catch (error) {
+                btn.disabled = false; btn.innerText = "Crear mi cuenta";
+                errorRegistro.style.display = 'block';
+                if(error.code === 'auth/email-already-in-use') errorRegistro.innerText = "❌ Ese correo ya está registrado.";
+                else errorRegistro.innerText = "❌ Error al crear la cuenta.";
+            }
+        });
     </script>
 </body>
 </html>
