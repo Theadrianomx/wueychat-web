@@ -447,6 +447,29 @@
             todasLasNotas.forEach(nota => { const contenidoNota = nota.textContent.toLowerCase(); if (contenidoNota.includes(textoBuscado)) { nota.style.display = "block"; notasVisibles++; } else { nota.style.display = "none"; } });
             document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none";
         });
+
+        // --- SISTEMA DE NOTIFICACIONES (RESTAURADO) ---
+        function escucharNotificaciones() {
+            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
+            onSnapshot(qNoti, (snapshot) => {
+                const listaDiv = document.getElementById("lista-notificaciones"); const puntoRojo = document.getElementById("punto-rojo");
+                listaDiv.innerHTML = ""; let noLeidas = 0; let notis = [];
+                snapshot.forEach(docSnap => { const noti = docSnap.data(); noti.id = docSnap.id; if(noti.fecha) { notis.push(noti); } if (!noti.leida) noLeidas++; });
+                notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis()); puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
+                if (notis.length === 0) { listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; }
+                notis.forEach(noti => {
+                    const item = document.createElement("div"); item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`; item.dataset.id = noti.id;
+                    let texto = ""; if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`; if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`; if (noti.tipo === "respuesta_estado") texto = `<strong>${noti.deNombre}</strong> ${noti.mensajeTexto}`; item.innerHTML = texto; listaDiv.appendChild(item);
+                });
+            });
+        }
+
+        document.getElementById("btn-campanita").addEventListener("click", (e) => {
+            e.stopPropagation(); const panel = document.getElementById("panel-notificaciones"); panel.style.display = panel.style.display === "block" ? "none" : "block";
+            if (panel.style.display === "block") { document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => { try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){} }); }
+        });
+                
+        
     </script>
 </body>
 </html>
