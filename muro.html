@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wueychat - Muro Premium (Encriptado)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root[data-theme="light"] {
+            --fondo: #f0f2f5; --fondo-carta: #ffffff; --texto-principal: #1c1e21; --texto-secundario: #606770;
+            --color-primario: #1877f2; --color-hover: #166fe5; --borde: #dddfe2; --sombra: rgba(0, 0, 0, 0.1);
+            --fondo-barra: rgba(255, 255, 255, 0.85); --fondo-comentario: #f0f2f5;
+        }
+        :root[data-theme="dark"] {
+            --fondo: #18191a; --fondo-carta: #242526; --texto-principal: #e4e6eb; --texto-secundario: #b0b3b8;
+            --color-primario: #2e89ff; --color-hover: #4e9eff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.4);
+            --fondo-barra: rgba(36, 37, 38, 0.85); --fondo-comentario: #3a3b3c;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
+        .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; overflow-x: hidden; }
+
+        .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border-bottom: 1px solid var(--borde); }
+        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 2px 5px var(--sombra); gap: 10px; }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
+        
+        .contenedor-buscador { flex-grow: 1; max-width: 350px; position: relative; }
+        .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; }
+        .icono-lupa { position: absolute; left: 12px; top: 10px; font-size: 14px; color: var(--texto-secundario); }
+        @media (min-width: 500px) { .barra-superior h1 { display: block; } }
+
+        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 8px; border-radius: 50%; transition: transform 0.2s ease; }
+        .btn-icono:active { transform: scale(0.9); }
+        .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
+        .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+        .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
+
+        .contenedor-campanita { position: relative; }
+        .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
+        .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; }
+        .noti-item { padding: 12px; border-bottom: 1px solid var(--borde); font-size: 14px; color: var(--texto-principal); border-radius: 8px; margin-bottom: 5px; }
+        .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
+        .noti-item strong { color: var(--color-primario); }
+
+        /* ESTADOS EFÍMEROS */
+        .contenedor-historias { display: flex; gap: 15px; overflow-x: auto; padding: 15px 0 5px 0; margin-bottom: 20px; scrollbar-width: none; }
+        .contenedor-historias::-webkit-scrollbar { display: none; }
+        .historia-item { display: flex; flex-direction: column; align-items: center; min-width: 75px; cursor: pointer; position: relative; }
+        .historia-avatar-contenedor { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: none; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; transition: transform 0.2s; }
+        .historia-avatar-contenedor.activa { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .historia-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--fondo); object-fit: cover; background-color: var(--fondo-carta); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: var(--texto-secundario); }
+        .historia-nombre { font-size: 12px; color: var(--texto-principal); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; text-align: center; }
+        .btn-agregar-icono { position: absolute; bottom: 20px; right: 0; background-color: var(--color-primario); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 3px solid var(--fondo); }
+
+        /* VISOR DE ESTADOS */
+        .visor-estados { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1000; flex-direction: column; }
+        .visor-barra-progreso { width: 100%; height: 3px; background-color: rgba(255,255,255,0.3); margin-top: 10px; display: flex; }
+        .visor-progreso-lleno { height: 100%; background-color: #fff; width: 0%; transition: width linear; }
+        .visor-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 15px; color: white; position: absolute; top: 15px; width: 100%; box-sizing: border-box; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .visor-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .visor-nombre-texto { font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .btn-cerrar-visor { background: none; border: none; color: white; font-size: 28px; cursor: pointer; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .visor-contenido { flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        .visor-media-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .visor-media-video { width: 100%; max-height: 100%; object-fit: contain; outline: none; }
+        .visor-interaccion { padding: 15px; display: flex; gap: 10px; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-respuesta { flex-grow: 1; padding: 12px 15px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.5); background-color: transparent; color: white; font-size: 15px; }
+        .btn-enviar-respuesta { background-color: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .visor-emojis { display: flex; gap: 10px; margin-left: 5px; }
+        .visor-emoji { font-size: 24px; cursor: pointer; }
+        .toast-enviado { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 20; }
+
+        /* POSTS NORMALES */
+        .contenedor-publicacion { background-color: var(--fondo-carta); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); position: relative;}
+        .insignia-seguridad { position: absolute; top: -10px; right: 10px; background: #00C851; color: white; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
+        .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
+        input[type="file"] { font-size: 14px; color: var(--texto-secundario); max-width: 50%; }
+        .btn-publicar { background-color: var(--color-primario); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; flex-grow: 1; }
+        .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); }
+        .post-cabecera { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+        .post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primario); background-color: var(--color-primario); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        .info-autor { display: flex; flex-direction: column; }
+        .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 16px; text-decoration: none; }
+        .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 5px var(--sombra); }
+        .post-video { max-width: 100%; border-radius: 8px; margin-top: 8px; outline: none; background-color: #000; box-shadow: 0 2px 5px var(--sombra); }
+        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
+        .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
+        .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .menu-emojis { display: none; position: absolute; bottom: 50px; left: 0; background: var(--fondo-carta); padding: 5px 10px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 10px; z-index: 10; border: 1px solid var(--borde); }
+        .seccion-izquierda:hover .menu-emojis { display: flex; }
+        .emoji { cursor: pointer; font-size: 26px; }
+        .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
+        
+        .seccion-derecha-botones { display: flex; gap: 8px; }
+        .btn-eliminar, .btn-editar { background: none; border: none; font-weight: bold; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; transition: background 0.2s; }
+        .btn-eliminar { color: #ff4d4d; } .btn-editar { color: var(--texto-secundario); }
+        .btn-eliminar:hover, .btn-editar:hover { background-color: var(--fondo); }
+
+        .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
+        .comentario { background-color: var(--fondo-comentario); padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 14px; display: inline-block; max-width: 90%; }
+        .comentario strong { color: var(--texto-principal); margin-right: 5px; }
+        .caja-escribir-comentario { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+        .input-comentario { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo); color: var(--texto-principal); font-size: 14px; }
+        .btn-enviar-comentario { background-color: var(--color-primario); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .btn-borrar-comentario { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 12px; margin-left: 8px; opacity: 0.7; }
+        .btn-borrar-comentario:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="barra-superior">
+        <h1>Wueychat</h1>
+        <div class="contenedor-buscador">
+            <span class="icono-lupa">🔍</span>
+            <input type="text" id="buscador-muro" class="input-buscador" placeholder="Buscar amigos o notas...">
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div class="contenedor-campanita">
+                <button id="btn-campanita" class="btn-icono">🔔<span id="punto-rojo" class="punto-rojo"></span></button>
+                <div id="panel-notificaciones" class="panel-notificaciones">
+                    <h4 style="margin: 0 0 10px 0; color: var(--color-primario); border-bottom: 1px solid var(--borde); padding-bottom: 5px;">Tus Alertas</h4>
+                    <div id="lista-notificaciones">Cargando avisos...</div>
+                </div>
+            </div>
+            <button id="btn-theme" class="btn-icono">☀️</button>
+            <button id="btn-salir-top" class="btn-eliminar-top">Salir</button>
+        </div>
+    </div>
+
+    <div id="visor-estados" class="visor-estados">
+        <div class="visor-barra-progreso"><div class="visor-progreso-lleno" id="barra-progreso"></div></div>
+        <div class="visor-cabecera">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="visor-avatar" src="" class="visor-avatar-img">
+                <span id="visor-nombre" class="visor-nombre-texto">Usuario</span>
+            </div>
+            <button id="btn-cerrar-visor" class="btn-cerrar-visor">✖</button>
+        </div>
+        <div class="visor-contenido" id="visor-contenido"></div>
+        <div class="toast-enviado" id="toast-enviado">Enviado ✅</div>
+        <div class="visor-interaccion" id="visor-interaccion">
+            <input type="text" id="input-respuesta-estado" class="input-respuesta" placeholder="Responder...">
+            <button class="btn-enviar-respuesta" id="btn-enviar-respuesta">➤</button>
+            <div class="visor-emojis">
+                <span class="visor-emoji" data-emoji="❤️">❤️</span>
+                <span class="visor-emoji" data-emoji="🔥">🔥</span>
+                <span class="visor-emoji" data-emoji="😂">😂</span>
+                <span class="visor-emoji" data-emoji="😮">😮</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 500; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);">
+        <div style="background: var(--fondo-carta); padding: 20px; border-radius: 12px; width: 100%; max-width: 450px; border: 1px solid var(--borde); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: var(--color-primario);">Editar Publicación (Cifrada) 🔒</h3>
+            <textarea id="texto-editar" rows="4" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto-principal); margin-bottom: 15px; resize: none; font-family: inherit; font-size: 16px; box-sizing: border-box;"></textarea>
+            <input type="hidden" id="id-post-editar">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-cancelar-edicion" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--borde); background: transparent; color: var(--texto-principal); cursor: pointer; font-weight: bold;">Cancelar</button>
+                <button id="btn-guardar-edicion" style="flex: 1; padding: 10px; border-radius: 8px; border: none; background: var(--color-primario); color: white; cursor: pointer; font-weight: bold;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor-principal">
+        <div class="contenedor-historias" id="barra-historias">
+            <div class="historia-item" id="btn-mi-historia">
+                <div class="historia-avatar-contenedor" id="mi-aro-historia">
+                    <img id="img-mi-historia" src="" class="historia-avatar" style="display:none;">
+                    <div id="letra-mi-historia" class="historia-avatar">?</div>
+                </div>
+                <div class="btn-agregar-icono">+</div>
+                <span class="historia-nombre">Mi Estado</span>
+            </div>
+            <input type="file" id="archivo-historia" accept="image/*,video/*" style="display: none;">
+            <div id="lista-historias-amigos" style="display: flex; gap: 15px;"></div>
+        </div>
+        <p id="mensaje-subiendo-historia" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-bottom: 15px; font-weight: bold;">Procesando magia... ⏳</p>
+
+        <div class="contenedor-publicacion">
+            <div class="insignia-seguridad">🔒 Encriptación AES Activada</div>
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente? Usa +rojo, +azul o #hashtags"></textarea>
+            <div class="acciones-publicar">
+                <input type="file" id="archivo-publicacion" accept="image/*,video/*">
+                <button id="btn-publicar" class="btn-publicar">Publicar Seguro</button>
+            </div>
+            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Subiendo archivo... 🚀</p>
+        </div>
+        
+        <p id="mensaje-no-resultados" style="display: none; text-align: center; color: var(--texto-secundario); font-weight: bold; margin-top: 30px;">No se encontraron resultados 🕵️‍♂️</p>
+        <div id="feed"></div>
+    </div>
+
+    <div class="barra-inferior">
+        <a href="muro.html" class="nav-link activo"><button class="btn-icono activo">🏠</button><span>Inicio</span></a>
+        <a href="reels.html" class="nav-link"><button class="btn-icono">🎬</button><span>Videos</span></a>
+        <a href="perfil.html" class="nav-link"><button class="btn-icono">👤</button><span>Perfil</span></a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId
