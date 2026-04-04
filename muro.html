@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wueychat - Muro Premium (Escuadras)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root[data-theme="light"] {
+            --fondo: #f0f2f5; --fondo-carta: #ffffff; --texto-principal: #1c1e21; --texto-secundario: #606770;
+            --color-primario: #1877f2; --color-hover: #166fe5; --borde: #dddfe2; --sombra: rgba(0, 0, 0, 0.1);
+            --fondo-barra: rgba(255, 255, 255, 0.85); --fondo-comentario: #f0f2f5;
+        }
+        :root[data-theme="dark"] {
+            --fondo: #18191a; --fondo-carta: #242526; --texto-principal: #e4e6eb; --texto-secundario: #b0b3b8;
+            --color-primario: #2e89ff; --color-hover: #4e9eff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.4);
+            --fondo-barra: rgba(36, 37, 38, 0.85); --fondo-comentario: #3a3b3c;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
+        .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; overflow-x: hidden; }
+
+        .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border-bottom: 1px solid var(--borde); }
+        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 2px 5px var(--sombra); gap: 10px; }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
+        
+        .contenedor-buscador { flex-grow: 1; max-width: 350px; position: relative; }
+        .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; }
+        .icono-lupa { position: absolute; left: 12px; top: 10px; font-size: 14px; color: var(--texto-secundario); }
+        @media (min-width: 500px) { .barra-superior h1 { display: block; } }
+
+        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 8px; border-radius: 50%; transition: transform 0.2s ease; }
+        .btn-icono:active { transform: scale(0.9); }
+        .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
+        .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+        .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
+
+        .contenedor-campanita { position: relative; }
+        .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
+        .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; }
+        .noti-item { padding: 12px; border-bottom: 1px solid var(--borde); font-size: 14px; color: var(--texto-principal); border-radius: 8px; margin-bottom: 5px; }
+        .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
+        .noti-item strong { color: var(--color-primario); }
+
+        .contenedor-historias { display: flex; gap: 15px; overflow-x: auto; padding: 15px 0 5px 0; margin-bottom: 20px; scrollbar-width: none; }
+        .contenedor-historias::-webkit-scrollbar { display: none; }
+        .historia-item { display: flex; flex-direction: column; align-items: center; min-width: 75px; cursor: pointer; position: relative; }
+        .historia-avatar-contenedor { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: none; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; transition: transform 0.2s; }
+        .historia-avatar-contenedor.activa { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .historia-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--fondo); object-fit: cover; background-color: var(--fondo-carta); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: var(--texto-secundario); }
+        .historia-nombre { font-size: 12px; color: var(--texto-principal); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; text-align: center; }
+        .btn-agregar-icono { position: absolute; bottom: 20px; right: 0; background-color: var(--color-primario); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 3px solid var(--fondo); }
+
+        .visor-estados { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1000; flex-direction: column; }
+        .visor-barra-progreso { width: 100%; height: 3px; background-color: rgba(255,255,255,0.3); margin-top: 10px; display: flex; }
+        .visor-progreso-lleno { height: 100%; background-color: #fff; width: 0%; transition: width linear; }
+        .visor-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 15px; color: white; position: absolute; top: 15px; width: 100%; box-sizing: border-box; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .visor-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .visor-nombre-texto { font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .btn-cerrar-visor { background: none; border: none; color: white; font-size: 28px; cursor: pointer; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .visor-contenido { flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        .visor-media-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .visor-media-video { width: 100%; max-height: 100%; object-fit: contain; outline: none; }
+        .visor-interaccion { padding: 15px; display: flex; gap: 10px; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-respuesta { flex-grow: 1; padding: 12px 15px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.5); background-color: transparent; color: white; font-size: 15px; }
+        .btn-enviar-respuesta { background-color: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .visor-emojis { display: flex; gap: 10px; margin-left: 5px; }
+        .visor-emoji { font-size: 24px; cursor: pointer; }
+        .toast-enviado { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 20; }
+
+        .contenedor-publicacion { background-color: var(--fondo-carta); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); position: relative;}
+        .insignia-seguridad { position: absolute; top: -10px; right: 10px; background: #00C851; color: white; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
+        .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; flex-wrap: wrap; }
+        input[type="file"] { font-size: 14px; color: var(--texto-secundario); max-width: 40%; }
+        .btn-publicar { background-color: var(--color-primario); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex-grow: 1; }
+        .btn-escuadra { background-color: #1a1a24; border: 2px solid #00ffcc; color: #00ffcc; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-escuadra:hover { background-color: #00ffcc; color: #1a1a24; }
+
+        .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); }
+        .post-cabecera { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+        .post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primario); background-color: var(--color-primario); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        .info-autor { display: flex; flex-direction: column; }
+        .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 16px; text-decoration: none; }
+        .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 5px var(--sombra); }
+        .post-video { max-width: 100%; border-radius: 8px; margin-top: 8px; outline: none; background-color: #000; box-shadow: 0 2px 5px var(--sombra); }
+
+        /* DISEÑO DE TARJETA GAMER (ESCUADRA) */
+        .post.escuadra { background: linear-gradient(145deg, #16161e, #1a1a24); border: 2px solid #00ffcc; color: white; box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2); }
+        .post.escuadra .post-autor a { color: #00ffcc; }
+        .post.escuadra .post-fecha { color: #888; }
+        .post.escuadra .post-texto { color: #e4e6eb; }
+        .insignia-juego { background: #00ffcc; color: #16161e; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .slots-contenedor { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .slot { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        .slot.lleno { border: 2px solid #00ffcc; background-color: #1a1a24; color: white; }
+        .slot.lleno img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .slot.vacio { border: 2px dashed #555; color: #555; background: rgba(0,0,0,0.3); }
+        .btn-unirse { background-color: #00ffcc; color: #16161e; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 15px; }
+        .btn-unirse:hover { background-color: #00ccaa; }
+        .btn-salir-escuadra { background-color: transparent; border: 2px solid #ff4d4d; color: #ff4d4d; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 15px; }
+        .btn-salir-escuadra:hover { background-color: #ff4d4d; color: white; }
+        .btn-lleno { background-color: #444; color: #888; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: not-allowed; width: 100%; font-size: 15px; }
+
+        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
+        .post.escuadra .contenedor-reacciones { border-top: 1px solid #333; }
+        .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
+        .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .post.escuadra .btn-reaccionar-premium { background-color: #222; border-color: #444; color: #aaa; }
+        .menu-emojis { display: none; position: absolute; bottom: 50px; left: 0; background: var(--fondo-carta); padding: 5px 10px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 10px; z-index: 10; border: 1px solid var(--borde); }
+        .post.escuadra .menu-emojis { background: #1a1a24; border-color: #333; }
+        .seccion-izquierda:hover .menu-emojis { display: flex; }
+        .emoji { cursor: pointer; font-size: 26px; }
+        .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
+        .post.escuadra .lista-reacciones { background-color: #222; }
+        
+        .seccion-derecha-botones { display: flex; gap: 8px; }
+        .btn-eliminar, .btn-editar { background: none; border: none; font-weight: bold; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; transition: background 0.2s; }
+        .btn-eliminar { color: #ff4d4d; } .btn-editar { color: var(--texto-secundario); }
+        .btn-eliminar:hover, .btn-editar:hover { background-color: var(--fondo); }
+
+        .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
+        .post.escuadra .seccion-comentarios { border-top: 1px solid #333; }
+        .comentario { background-color: var(--fondo-comentario); padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 14px; display: inline-block; max-width: 90%; }
+        .post.escuadra .comentario { background-color: #222; color: #ddd; }
+        .comentario strong { color: var(--texto-principal); margin-right: 5px; }
+        .post.escuadra .comentario strong { color: #00ffcc; }
+        .caja-escribir-comentario { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+        .input-comentario { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo); color: var(--texto-principal); font-size: 14px; }
+        .post.escuadra .input-comentario { background-color: #16161e; border-color: #444; color: white; }
+        .btn-enviar-comentario { background-color: var(--color-primario); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .post.escuadra .btn-enviar-comentario { background-color: #00ffcc; color: #16161e; }
+        .btn-borrar-comentario { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 12px; margin-left: 8px; opacity: 0.7; }
+        .btn-borrar-comentario:hover { opacity: 1; }
+
+        /* MODALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 500; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--fondo-carta); padding: 20px; border-radius: 12px; width: 100%; max-width: 450px; border: 1px solid var(--borde); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-box h3 { margin-top: 0; color: var(--color-primario); }
+        .modal-box.gamer { background: #1a1a24; border: 1px solid #00ffcc; color: white; }
+        .modal-box.gamer h3 { color: #00ffcc; display: flex; align-items: center; gap: 10px; }
+        .input-modal { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto-principal); margin-bottom: 15px; resize: none; font-family: inherit; font-size: 16px; box-sizing: border-box; }
+        .modal-box.gamer .input-modal { background: #16161e; border-color: #444; color: white; }
+        .btn-accion-modal { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="barra-superior">
+        <h1>Wueychat</h1>
+        <div class="contenedor-buscador">
+            <span class="icono-lupa">🔍</span>
+            <input type="text" id="buscador-muro" class="input-buscador" placeholder="Buscar amigos o notas...">
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div class="contenedor-campanita">
+                <button id="btn-campanita" class="btn-icono">🔔<span id="punto-rojo" class="punto-rojo"></span></button>
+                <div id="panel-notificaciones" class="panel-notificaciones">
+                    <h4 style="margin: 0 0 10px 0; color: var(--color-primario); border-bottom: 1px solid var(--borde); padding-bottom: 5px;">Tus Alertas</h4>
+                    <div id="lista-notificaciones">Cargando avisos...</div>
+                </div>
+            </div>
+            <button id="btn-theme" class="btn-icono">☀️</button>
+            <button id="btn-salir-top" class="btn-eliminar-top">Salir</button>
+        </div>
+    </div>
+
+    <div id="visor-estados" class="visor-estados">
+        <div class="visor-barra-progreso"><div class="visor-progreso-lleno" id="barra-progreso"></div></div>
+        <div class="visor-cabecera">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="visor-avatar" src="" class="visor-avatar-img">
+                <span id="visor-nombre" class="visor-nombre-texto">Usuario</span>
+            </div>
+            <button id="btn-cerrar-visor" class="btn-cerrar-visor">✖</button>
+        </div>
+        <div class="visor-contenido" id="visor-contenido"></div>
+        <div class="toast-enviado" id="toast-enviado">Enviado ✅</div>
+        <div class="visor-interaccion" id="visor-interaccion">
+            <input type="text" id="input-respuesta-estado" class="input-respuesta" placeholder="Responder...">
+            <button class="btn-enviar-respuesta" id="btn-enviar-respuesta">➤</button>
+            <div class="visor-emojis">
+                <span class="visor-emoji" data-emoji="❤️">❤️</span>
+                <span class="visor-emoji" data-emoji="🔥">🔥</span>
+                <span class="visor-emoji" data-emoji="😂">😂</span>
+                <span class="visor-emoji" data-emoji="😮">😮</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Editar Publicación (Cifrada) 🔒</h3>
+            <textarea id="texto-editar" rows="4" class="input-modal"></textarea>
+            <input type="hidden" id="id-post-editar">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-cancelar-edicion" class="btn-accion-modal" style="background: transparent; border: 1px solid var(--borde); color: var(--texto-principal);">Cancelar</button>
+                <button id="btn-guardar-edicion" class="btn-accion-modal" style="background: var(--color-primario); color: white;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-escuadra" class="modal-overlay">
+        <div class="modal-box gamer">
+            <h3>🎮 Armar Escuadra</h3>
+            <label style="font-size: 14px; color: #888; font-weight: bold;">Juego:</label>
+            <input type="text" id="juego-escuadra" class="input-modal" placeholder="Ej. Free Fire o Minecraft">
+            
+            <label style="font-size: 14px; color: #888; font-weight: bold;">Cupos Disponibles:</label>
+            <input type="number" id="cupos-escuadra" class="input-modal" min="1" max="10" placeholder="¿Cuántos jugadores faltan? (Ej. 3)">
+            
+            <label style="font-size: 14px; color: #888; font-weight: bold;">Misión / Reglas (Cifrado 🔒):</label>
+            <textarea id="texto-escuadra" rows="3" class="input-modal" placeholder="Ej. Busco soporte para subir a Heroico con micro..."></textarea>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-cancelar-escuadra" class="btn-accion-modal" style="background: transparent; border: 1px solid #555; color: #aaa;">Cancelar</button>
+                <button id="btn-publicar-escuadra" class="btn-accion-modal" style="background: #00ffcc; color: #16161e;">Reclutar 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor-principal">
+        <div class="contenedor-historias" id="barra-historias">
+            <div class="historia-item" id="btn-mi-historia">
+                <div class="historia-avatar-contenedor" id="mi-aro-historia">
+                    <img id="img-mi-historia" src="" class="historia-avatar" style="display:none;">
+                    <div id="letra-mi-historia" class="historia-avatar">?</div>
+                </div>
+                <div class="btn-agregar-icono">+</div>
+                <span class="historia-nombre">Mi Estado</span>
+            </div>
+            <input type="file" id="archivo-historia" accept="image/*,video/*" style="display: none;">
+            <div id="lista-historias-amigos" style="display: flex; gap: 15px;"></div>
+        </div>
+        <p id="mensaje-subiendo-historia" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-bottom: 15px; font-weight: bold;">Procesando magia... ⏳</p>
+
+        <div class="contenedor-publicacion">
+            <div class="insignia-seguridad">🔒 Encriptación AES Activada</div>
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente? Usa +rojo, +azul o #hashtags"></textarea>
+            <div class="acciones-publicar">
+                <input type="file" id="archivo-publicacion" accept="image/*,video/*">
+                <button id="btn-abrir-escuadra" class="btn-escuadra">🎮 Armar Escuadra</button>
+                <button id="btn-publicar" class="btn-publicar">Publicar Seguro</button>
+            </div>
+            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Subiendo archivo... 🚀</p>
+        </div>
+        
+        <p id="mensaje-no-resultados" style="display: none; text-align: center; color: var(--texto-secundario); font-weight: bold; margin-top: 30px;">No se encontraron resultados 🕵️‍♂️</p>
+        
+        <div id="feed"></div>
+    </div>
+
+    <div class="barra-inferior">
+        <a href="muro.html" class="nav-link activo"><button class="btn-icono activo">🏠</button><span>Inicio</span></a>
+        <a href="reels.html" class="nav-link"><button class="btn-icono">🎬</button><span>Videos</span></a>
+        <a href="perfil.html" class="nav-link"><button class="btn-icono">👤</button><span>Perfil</span></a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDoc, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", authDomain: "wueychat.firebaseapp.com", projectId: "wueychat", 
+            storageBucket: "wueychat.firebasestorage.app", messagingSenderId: "889745387297", appId: "1:889745387297:web:1b8343a328d854fc99d860", measurementId: "G-LKQ86ZXTRK" 
+        };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        
+        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; const CLOUDINARY_CLOUD_NAME = "dizktanb9"; const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
+
+        let usuarioActual = null; let llaveUsuarioActual = "anonimo";
+        let diccionarioHistorias = {}; let timeoutVisor = null; let autorViendo = null;
+
+        const LLAVE_DIMENSIONAL = "C137_WueyChat_Secreto_2026"; 
+        function encriptar(textoCrudo) { if(!textoCrudo) return ""; return CryptoJS.AES.encrypt(String(textoCrudo), LLAVE_DIMENSIONAL).toString(); }
+        function desencriptar(textoCifrado) { if(!textoCifrado) return ""; try { const bytes = CryptoJS.AES.decrypt(String(textoCifrado), LLAVE_DIMENSIONAL); const original = bytes.toString(CryptoJS.enc.Utf8); return original ? original : String(textoCifrado); } catch(e) { return String(textoCifrado); } }
+
+        function formatearTexto(texto) {
+            if (!texto) return "";
+            let limpio = String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            limpio = limpio.replace(/(^|\s)(#[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ]+)/g, '$1<span style="color: var(--color-primario); font-weight: bold; cursor:pointer;">$2</span>');
+            const colores = { rojo: '#ff4d4d', azul: '#1877f2', verde: '#4CAF50', amarillo: '#FFC107', naranja: '#FF9800', morado: '#9C27B0', normal: 'inherit' };
+            let lineas = limpio.split('\n');
+            let parseado = lineas.map(linea => {
+                let conSpans = linea.replace(/\+(rojo|azul|verde|amarillo|naranja|morado|normal)\s*/gi, (match, color) => { return `</span><span style="color: ${colores[color.toLowerCase()]}; font-weight: bold;">`; });
+                return `<span>${conSpans}</span>`; 
+            });
+            return parseado.join('<br>').replace(/<span><\/span>/g, '');
+        }
+
+        function comprimirImagen(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image(); img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas'); let MAX_WIDTH = 800; let MAX_HEIGHT = 800; let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => { resolve(new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() })); }, 'image/jpeg', 0.8); 
+                    };
+                };
+            });
+        }
+
+        const btnTheme = document.getElementById('btn-theme'); const html = document.documentElement; let temaGuardado = 'light'; try { temaGuardado = localStorage.getItem('theme') || 'light'; } catch(e) {} html.setAttribute('data-theme', temaGuardado); btnTheme.innerText = temaGuardado === 'light' ? '☀️' : '🌙';
+        btnTheme.addEventListener('click', () => { const nuevoTema = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; html.setAttribute('data-theme', nuevoTema); try { localStorage.setItem('theme', nuevoTema); } catch(e) {} btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙'; });
+
+        function escucharNotificaciones() {
+            if(!usuarioActual) return;
+            const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email));
+            onSnapshot(qNoti, (snapshot) => {
+                const listaDiv = document.getElementById("lista-notificaciones"); const puntoRojo = document.getElementById("punto-rojo"); listaDiv.innerHTML = ""; let noLeidas = 0; let notis = [];
+                snapshot.forEach(docSnap => { const noti = docSnap.data(); noti.id = docSnap.id; if(noti.fecha) { notis.push(noti); } if (!noti.leida) noLeidas++; });
+                notis.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis()); puntoRojo.style.display = noLeidas > 0 ? "block" : "none";
+                if (notis.length === 0) { listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; }
+                notis.forEach(noti => {
+                    const item = document.createElement("div"); item.className = `noti-item ${noti.leida ? '' : 'no-leida'}`; item.dataset.id = noti.id;
+                    let texto = ""; if (noti.tipo === "reaccion") texto = `A <strong>${noti.deNombre}</strong> le gustó tu nota.`; if (noti.tipo === "comentario") texto = `<strong>${noti.deNombre}</strong> comentó tu publicación.`; if (noti.tipo === "respuesta_estado") texto = `<strong>${noti.deNombre}</strong> ${noti.mensajeTexto}`; if (noti.tipo === "escuadra") texto = `<strong>${noti.deNombre}</strong> se unió a tu escuadra.`; item.innerHTML = texto; listaDiv.appendChild(item);
+                });
+            });
+        }
+
+        document.getElementById("btn-campanita").addEventListener("click", (e) => {
+            e.stopPropagation(); const panel = document.getElementById("panel-notificaciones"); panel.style.display = panel.style.display === "block" ? "none" : "block";
+            if (panel.style.display === "block") { document.querySelectorAll(".noti-item.no-leida").forEach(async (item) => { try { await updateDoc(doc(db, "notificaciones", item.dataset.id), { leida: true }); } catch(err){} }); }
+        });
+        document.addEventListener('click', (event) => { const panel = document.getElementById("panel-notificaciones"); const btn = document.getElementById("btn-campanita"); if (panel.style.display === "block" && !panel.contains(event.target) && !btn.contains(event.target)) { panel.style.display = "none"; } });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                usuarioActual = user; if(user.email) llaveUsuarioActual = user.email.replace(/\./g, '_'); const nombreMostrar = user.displayName || "Yo";
+                if(user.photoURL) { document.getElementById("letra-mi-historia").style.display = "none"; document.getElementById("img-mi-historia").src = user.photoURL; document.getElementById("img-mi-historia").style.display = "block"; } else { document.getElementById("letra-mi-historia").innerText = nombreMostrar.charAt(0).toUpperCase(); }
+                cargarPublicaciones(); escucharNotificaciones(); escucharHistorias();
+            } else { window.location.href = "index.html"; }
+        });
+
+        document.getElementById("btn-salir-top").addEventListener("click", () => signOut(auth));
+
+        function escucharHistorias() {
+            const qHistorias = query(collection(db, "estados"), orderBy("fecha", "asc"));
+            onSnapshot(qHistorias, (snapshot) => {
+                const contenedorAmigos = document.getElementById("lista-historias-amigos"); contenedorAmigos.innerHTML = ""; const ahora = new Date().getTime(); diccionarioHistorias = {}; 
+                snapshot.forEach(docSnap => { const estado = docSnap.data(); if (estado.fecha && (ahora - estado.fecha.toMillis()) / (1000 * 60 * 60) < 24) { if (!diccionarioHistorias[estado.autor]) { diccionarioHistorias[estado.autor] = { autor: estado.autor, autorNombre: estado.autorNombre, autorFoto: estado.autorFoto, estados: [] }; } diccionarioHistorias[estado.autor].estados.push(estado); } });
+                document.getElementById("mi-aro-historia").classList.remove("activa");
+                Object.values(diccionarioHistorias).forEach(usuario => {
+                    if (usuario.autor !== usuarioActual.email) {
+                        const item = document.createElement("div"); item.className = "historia-item"; item.onclick = () => abrirVisor(usuario.autor);
+                        let avatar = usuario.autorFoto ? `<img src="${usuario.autorFoto}" class="historia-avatar">` : `<div class="historia-avatar">${usuario.autorNombre.charAt(0).toUpperCase()}</div>`;
+                        item.innerHTML = `<div class="historia-avatar-contenedor activa">${avatar}</div><span class="historia-nombre">${usuario.autorNombre.split(" ")[0]}</span>`; contenedorAmigos.appendChild(item);
+                    } else { document.getElementById("mi-aro-historia").classList.add("activa"); }
+                });
+            });
+        }
+        document.getElementById("mi-aro-historia").addEventListener("click", () => { if(document.getElementById("mi-aro-historia").classList.contains("activa")) { abrirVisor(usuarioActual.email); } });
+        document.getElementById("btn-mi-historia").querySelector(".btn-agregar-icono").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("archivo-historia").click(); });
+
+        document.getElementById("archivo-historia").addEventListener("change", async (e) => {
+            let archivoMedia = e.target.files[0]; if (!archivoMedia) return;
+            document.getElementById("mensaje-subiendo-historia").style.display = "block"; let urlFinal = null; let tipoFinal = null;
+            try {
+                if (archivoMedia.type.startsWith("image/")) { archivoMedia = await comprimirImagen(archivoMedia); const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); } 
+                else if (archivoMedia.type.startsWith("video/")) { const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
+                await addDoc(collection(db, "estados"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, mediaUrl: urlFinal, mediaType: tipoFinal, fecha: serverTimestamp() }); e.target.value = ""; 
+            } catch (error) { alert("Error al subir estado."); } finally { document.getElementById("mensaje-subiendo-historia").style.display = "none"; }
+        });
+
+        function abrirVisor(correoAutor) { /* ...código minificado del visor... */ autorViendo = correoAutor; const usuarioData = diccionarioHistorias[correoAutor]; if(!usuarioData || usuarioData.estados.length === 0) return; const estadoActual = usuarioData.estados[usuarioData.estados.length - 1]; document.getElementById("visor-estados").style.display = "flex"; document.getElementById("visor-nombre").innerText = usuarioData.autorNombre; document.getElementById("visor-avatar").src = usuarioData.autorFoto || "https://i.ibb.co/Vv0F8sP/default-avatar.png"; if(correoAutor === usuarioActual.email) { document.getElementById("visor-interaccion").style.display = "none"; } else { document.getElementById("visor-interaccion").style.display = "flex"; document.getElementById("input-respuesta-estado").value = ""; } const cajaContenido = document.getElementById("visor-contenido"); const barra = document.getElementById("barra-progreso"); cajaContenido.innerHTML = ""; barra.style.width = "0%"; barra.style.transition = "none"; if(estadoActual.mediaType === "video") { const vid = document.createElement("video"); vid.className = "visor-media-video"; vid.src = estadoActual.mediaUrl; vid.autoplay = true; vid.playsInline = true; cajaContenido.appendChild(vid); vid.onloadedmetadata = () => { setTimeout(() => { barra.style.transition = `width ${vid.duration}s linear`; barra.style.width = "100%"; }, 50); }; vid.onended = cerrarVisor; } else { const img = document.createElement("img"); img.className = "visor-media-img"; img.src = estadoActual.mediaUrl; cajaContenido.appendChild(img); setTimeout(() => { barra.style.transition = `width 5s linear`; barra.style.width = "100%"; }, 50); timeoutVisor = setTimeout(cerrarVisor, 5000); } }
+        function cerrarVisor() { document.getElementById("visor-estados").style.display = "none"; document.getElementById("visor-contenido").innerHTML = ""; if(timeoutVisor) clearTimeout(timeoutVisor); autorViendo = null; }
+        document.getElementById("btn-cerrar-visor").addEventListener("click", cerrarVisor);
+        async function enviarRespuestaEstado(mensaje, esEmoji = false) { if(!autorViendo || autorViendo === usuarioActual.email) return; try { let textoNoti = esEmoji ? `Reaccionó a tu estado: ${mensaje}` : `Respondió a tu estado: "${mensaje}"`; await addDoc(collection(db, "notificaciones"), { para: autorViendo, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "respuesta_estado", mensajeTexto: textoNoti, leida: false, fecha: serverTimestamp() }); const toast = document.getElementById("toast-enviado"); toast.style.display = "block"; setTimeout(() => { toast.style.display = "none"; cerrarVisor(); }, 1500); } catch (err) {} }
+        document.getElementById("btn-enviar-respuesta").addEventListener("click", () => { const txt = document.getElementById("input-respuesta-estado").value.trim(); if(txt) enviarRespuestaEstado(txt, false); });
+        document.querySelectorAll(".visor-emoji").forEach(btn => { btn.addEventListener("click", (e) => { const emoji = e.target.getAttribute("data-emoji"); enviarRespuestaEstado(emoji, true); }); });
+
+        // --- SISTEMA DE ESCUADRAS (LFG) ---
+        document.getElementById("btn-abrir-escuadra").addEventListener("click", () => document.getElementById("modal-escuadra").style.display = "flex");
+        document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => document.getElementById("modal-escuadra").style.display = "none");
+        
+        document.getElementById("btn-publicar-escuadra").addEventListener("click", async () => {
+            const juego = document.getElementById("juego-escuadra").value.trim();
+            const cupos = parseInt(document.getElementById("cupos-escuadra").value);
+            const textoCrudo = document.getElementById("texto-escuadra").value.trim();
+            
+            if(!juego || !cupos || !textoCrudo) { alert("Llena todos los campos para armar la escuadra."); return; }
+            if(cupos < 1 || cupos > 10) { alert("Los cupos deben ser entre 1 y 10."); return; }
+            
+            const btn = document.getElementById("btn-publicar-escuadra");
+            btn.disabled = true; btn.innerText = "Reclutando... ⏳";
+            
+            const textoSeguro = encriptar(textoCrudo);
+            
+            // Diccionario de participantes (Inicia vacío, el creador es el dueño)
+            try {
+                await addDoc(collection(db, "publicaciones"), { 
+                    tipo: "escuadra",
+                    juego: juego,
+                    cuposTotales: cupos,
+                    participantes: {}, // Guardaremos la info por correo aquí
+                    autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, 
+                    texto: textoSeguro, mediaUrl: null, mediaType: null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] 
+                });
+                
+                document.getElementById("juego-escuadra").value = ""; document.getElementById("cupos-escuadra").value = ""; document.getElementById("texto-escuadra").value = "";
+                document.getElementById("modal-escuadra").style.display = "none";
+            } catch (error) { console.error(error); alert("Error al publicar escuadra."); } 
+            finally { btn.disabled = false; btn.innerText = "Reclutar 🚀"; }
+        });
+
+        // PUBLICAR NORMAL
+        const btnPublicar = document.getElementById("btn-publicar");
+        btnPublicar.addEventListener("click", async () => {
+            const textoCrudo = document.getElementById("texto-publicacion").value.trim(); let archivoMedia = document.getElementById("archivo-publicacion").files[0];
+            if (textoCrudo === "" && !archivoMedia) return;
+            btnPublicar.disabled = true; document.getElementById("mensaje-publicando").style.display = "block";
+            let urlFinal = null; let tipoFinal = null; const textoSeguro = encriptar(textoCrudo);
+            try {
+                if (archivoMedia) {
+                    if (archivoMedia.type.startsWith("image/")) { document.getElementById("mensaje-publicando").innerText = "Comprimiendo imagen... 🗜️"; archivoMedia = await comprimirImagen(archivoMedia); document.getElementById("mensaje-publicando").innerText = "Subiendo cifrado... 🚀"; const formData = new FormData(); formData.append("image", archivoMedia); const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const datosImgbb = await respuestaImgbb.json(); if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); } else if (archivoMedia.type.startsWith("video/")) { document.getElementById("mensaje-publicando").innerText = "Procesando video... 🎬"; const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); const datos = await respuesta.json(); if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); }
+                }
+                document.getElementById("mensaje-publicando").innerText = "Sellando datos... 🔒";
+                await addDoc(collection(db, "publicaciones"), { tipo: "normal", autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
+                document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
+            } catch (error) { console.error(error); alert("Error al subir."); } finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀"; }
+        });
+
+        // DIBUJAR MURO
+        function cargarPublicaciones() {
+            const feedDiv = document.getElementById("feed"); const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
+            onSnapshot(q, (snapshot) => {
+                feedDiv.innerHTML = ""; const textoBuscadoActual = document.getElementById("buscador-muro").value.toLowerCase();
+                snapshot.forEach((documentoFirebase) => {
+                    try {
+                        const post = documentoFirebase.data(); const postId = documentoFirebase.id; 
+                        if (post.fecha) {
+                            const cajaPost = document.createElement("div"); cajaPost.classList.add("post"); 
+                            if(post.tipo === "escuadra") cajaPost.classList.add("escuadra"); // Aplica tema oscuro/neón
+
+                            const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor; const fText = post.fecha.toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + post.fecha.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
+                            let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`;
+                            
+                            let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`;
+                            
+                            // SI ES ESCUADRA: Dibujar etiqueta del juego
+                            if(post.tipo === "escuadra" && post.juego) {
+                                htmlContenido += `<div class="insignia-juego">🎮 ${post.juego}</div>`;
+                            }
+
+                            let textoDesencriptado = desencriptar(post.texto);
+                            if (textoDesencriptado) { htmlContenido += `<div class="post-texto">${formatearTexto(textoDesencriptado)}</div>`; }
+                            
+                            const urlArchivo = post.mediaUrl || post.imagenUrl; const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null);
+                            if (urlArchivo && post.tipo !== "escuadra") { if (tipoArchivo === "video") { htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`; } else { htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`; } }
+                            
+                            // SI ES ESCUADRA: Dibujar Slots
+                            if(post.tipo === "escuadra") {
+                                const participantes = post.participantes || {};
+                                const listaLlaves = Object.keys(participantes);
+                                const totalUnidos = listaLlaves.length;
+                                const cupos = post.cuposTotales || 1;
+                                
+                                htmlContenido += `<div class="slots-contenedor">`;
+                                // Dibujar los unidos
+                                Object.values(participantes).forEach(p => {
+                                    let ava = p.foto ? `<img src="${p.foto}">` : p.nombre.charAt(0).toUpperCase();
+                                    htmlContenido += `<div class="slot lleno" title="${p.nombre}">${ava}</div>`;
+                                });
+                                // Dibujar los vacíos
+                                for(let i = 0; i < (cupos - totalUnidos); i++) {
+                                    htmlContenido += `<div class="slot vacio">+</div>`;
+                                }
+                                htmlContenido += `</div>`;
+
+                                // Botón de Unirse / Salir
+                                if(post.autor !== usuarioActual.email) {
+                                    if(participantes[llaveUsuarioActual]) {
+                                        htmlContenido += `<button class="btn-salir-escuadra" data-id="${postId}">Abandonar Escuadra</button>`;
+                                    } else if(totalUnidos >= cupos) {
+                                        htmlContenido += `<button class="btn-lleno" disabled>Escuadra Llena</button>`;
+                                    } else {
+                                        htmlContenido += `<button class="btn-unirse" data-id="${postId}">¡Me Apunto! ⚔️</button>`;
+                                    }
+                                }
+                            }
+
+                            const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null; for (const [correo, emoji] of Object.entries(reacciones)) { conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1; if (correo === llaveUsuarioActual) miReaccionActual = emoji; } const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   '); 
+                            let textoRAW = textoDesencriptado ? String(textoDesencriptado).replace(/"/g, '&quot;') : "";
+                            let botonesAutorHTML = post.autor === usuarioActual.email ? `<div class="seccion-derecha-botones"><button class="btn-editar" data-id="${postId}" data-raw="${textoRAW}">✏️</button><button class="btn-eliminar" data-id="${postId}">🗑️</button></div>` : "";
+                            
+                            htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍" data-autor="${post.autor}">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️" data-autor="${post.autor}">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂" data-autor="${post.autor}">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮" data-autor="${post.autor}">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢" data-autor="${post.autor}">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonesAutorHTML}</div>`;
+                            
+                            let htmlComentarios = `<div class="seccion-comentarios">`; 
+                            if (post.comentarios && post.comentarios.length > 0) { post.comentarios.forEach((comentario, index) => { let comentDesencriptado = desencriptar(comentario.texto); let puedeBorrarComentario = (comentario.autor === usuarioActual.email) || (post.autor === usuarioActual.email); let btnBorrarComentarioHTML = puedeBorrarComentario ? `<button class="btn-borrar-comentario" data-postid="${postId}" data-index="${index}">✖</button>` : ""; htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${formatearTexto(comentDesencriptado)} ${btnBorrarComentarioHTML}</div></div>`; }); } 
+                            htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`;
+                            
+                            htmlContenido += htmlComentarios; cajaPost.innerHTML = htmlContenido; 
+                            if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { cajaPost.style.display = "none"; } feedDiv.appendChild(cajaPost);
+                        }
+                    } catch (errorPost) { console.error("Saltando...", errorPost); }
+                });
+            });
+        }
+
+        // ACCIONES DEL MURO
+        document.getElementById("feed").addEventListener("click", async (e) => {
+            if (e.target.classList.contains("emoji")) { const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor"); const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) { } }
+            if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); const postId = btn.getAttribute("data-id"); if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { } } }
+            if (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar')) { const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar'); const postId = btn.getAttribute("data-id"); const textoRAW = btn.getAttribute("data-raw"); document.getElementById("id-post-editar").value = postId; document.getElementById("texto-editar").value = textoRAW; document.getElementById("modal-editar").style.display = "flex"; }
+            if (e.target.classList.contains("btn-borrar-comentario")) { const postId = e.target.getAttribute("data-postid"); const index = e.target.getAttribute("data-index"); if (confirm("¿Eliminar este comentario?")) { try { const docRef = doc(db, "publicaciones", postId); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const post = docSnap.data(); const comentarioAEliminar = post.comentarios[index]; await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) }); } } catch (err) {} } }
+            if (e.target.classList.contains("btn-enviar-comentario")) { const postId = e.target.getAttribute("data-id"); const autorDelPost = e.target.getAttribute("data-autor"); const inputElemento = document.getElementById(`input-comentario-${postId}`); const textoComentario = inputElemento.value.trim(); if (textoComentario !== "") { e.target.disabled = true; const comentSeguro = encriptar(textoComentario); try { const ref = doc(db, "publicaciones", postId); const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentSeguro }; await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) }); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); } inputElemento.value = ""; } catch (err) { alert("Error al comentar."); } finally { e.target.disabled = false; } } }
+            
+            // ACCIONES ESCUADRA
+            if (e.target.classList.contains("btn-unirse")) {
+                const postId = e.target.getAttribute("data-id");
+                try {
+                    const ref = doc(db, "publicaciones", postId);
+                    const act = {}; 
+                    act[`participantes.${llaveUsuarioActual}`] = { nombre: usuarioActual.displayName || "Usuario", foto: usuarioActual.photoURL || null };
+                    await updateDoc(ref, act);
+                    
+                    // Notificar al creador de la escuadra
+                    const docSnap = await getDoc(ref);
+                    if(docSnap.exists()) {
+                        const post = docSnap.data();
+                        await addDoc(collection(db, "notificaciones"), { para: post.autor, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "escuadra", leida: false, fecha: serverTimestamp() });
+                    }
+                } catch(err) { console.error(err); }
+            }
+            if (e.target.classList.contains("btn-salir-escuadra")) {
+                const postId = e.target.getAttribute("data-id");
+                try {
+                    const ref = doc(db, "publicaciones", postId);
+                    const act = {}; 
+                    act[`participantes.${llaveUsuarioActual}`] = deleteField();
+                    await updateDoc(ref, act);
+                } catch(err) { console.error(err); }
+            }
+        });
+        document.getElementById("feed").addEventListener("keypress", async (e) => { if (e.key === "Enter" && e.target.classList.contains("input-comentario")) { const postId = e.target.id.replace("input-comentario-", ""); const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); if(btnEnviar) btnEnviar.click(); } });
+
+        document.getElementById("btn-cancelar-edicion").addEventListener("click", () => document.getElementById("modal-editar").style.display = "none");
+        document.getElementById("btn-guardar-edicion").addEventListener("click", async () => { const postId = document.getElementById("id-post-editar").value; const nuevoTextoCrudo = document.getElementById("texto-editar").value.trim(); const btnGuardar = document.getElementById("btn-guardar-edicion"); btnGuardar.disabled = true; btnGuardar.innerText = "Guardando cifrado..."; const textoEditadoSeguro = encriptar(nuevoTextoCrudo); try { await updateDoc(doc(db, "publicaciones", postId), { texto: textoEditadoSeguro }); document.getElementById("modal-editar").style.display = "none"; } catch (err) { alert("Error al editar."); } finally { btnGuardar.disabled = false; btnGuardar.innerText = "Guardar Cambios"; } });
+        document.getElementById("buscador-muro").addEventListener("input", (e) => { const textoBuscado = e.target.value.toLowerCase(); const todasLasNotas = document.querySelectorAll(".post"); let notasVisibles = 0; todasLasNotas.forEach(nota => { const contenidoNota = nota.textContent.toLowerCase(); if (contenidoNota.includes(textoBuscado)) { nota.style.display = "block"; notasVisibles++; } else { nota.style.display = "none"; } }); document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none"; });
+    </script>
+</body>
+</html>
