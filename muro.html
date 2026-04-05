@@ -510,7 +510,7 @@
             e.stopPropagation(); document.getElementById("archivo-historia").click(); 
         });
 
-        // 9. SUBIDA XHR CON PORCENTAJE (EL CORAZÓN DEL FIX 🚀)
+        // 9. FUNCION MAESTRA DE SUBIDA CON PORCENTAJE (XHR)
         function subirArchivoConProgreso(url, formData, msgElement, textoBase) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
@@ -525,28 +525,24 @@
                 
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const respuesta = JSON.parse(xhr.responseText);
-                            resolve(respuesta);
-                        } catch (err) {
-                            reject(new Error("Error leyendo la respuesta del servidor."));
-                        }
+                        try { resolve(JSON.parse(xhr.responseText)); } 
+                        catch (err) { reject(new Error("Error leyendo el servidor.")); }
                     } else {
                         try {
                             const errData = JSON.parse(xhr.responseText);
                             reject(new Error(errData.error ? errData.error.message : "El servidor rechazó el archivo."));
                         } catch(e) {
-                            reject(new Error(`Error HTTP: ${xhr.status}. Archivo muy pesado o formato no aceptado.`));
+                            reject(new Error(`Error HTTP: ${xhr.status}. Archivo rechazado.`));
                         }
                     }
                 };
                 
-                xhr.onerror = () => reject(new Error("Fallo de conexión. ¿El archivo es demasiado grande?"));
+                xhr.onerror = () => reject(new Error("Fallo de conexión al subir."));
                 xhr.send(formData);
             });
         }
 
-        // 10. SUBIR HISTORIA (USANDO XHR)
+        // 10. SUBIR HISTORIA
         document.getElementById("archivo-historia").addEventListener("change", async (e) => { 
             let archivoMedia = e.target.files[0]; 
             if (!archivoMedia) return; 
@@ -562,7 +558,7 @@
                     formData.append("image", archivoMedia); 
                     const urlImgbb = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
                     
-                    const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgElement, "Subiendo Historia...");
+                    const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgElement, "Subiendo...");
                     if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); 
                 } 
                 else if (archivoMedia.type.startsWith("video/")) { 
@@ -571,14 +567,14 @@
                     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
                     const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; 
                     
-                    const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgElement, "Subiendo Video...");
+                    const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgElement, "Subiendo...");
                     if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); 
                 } 
                 
                 await addDoc(collection(db, "estados"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, mediaUrl: urlFinal, mediaType: tipoFinal, fecha: serverTimestamp() }); 
                 e.target.value = ""; 
             } catch (error) { 
-                alert("Error al subir estado: " + error.message); 
+                alert("Error al subir historia."); 
             } finally { 
                 msgElement.style.display = "none"; 
             } 
@@ -652,9 +648,10 @@
         });
 
         document.getElementById("btn-cerrar-crear-post").addEventListener("click", () => { document.getElementById("modal-crear-post").style.display = "none"; });
+        
         document.getElementById("trigger-escuadra-rapido").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("modal-escuadra").style.display = "flex"; });
+        
         document.getElementById("btn-cerrar-escuadra").addEventListener("click", () => { document.getElementById("modal-escuadra").style.display = "none"; });
-        document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => { document.getElementById("modal-escuadra").style.display = "none"; });
 
         // 13. PUBLICAR ESCUADRA
         document.getElementById("btn-publicar-escuadra").addEventListener("click", async () => {
@@ -676,7 +673,7 @@
             } catch (error) { console.error(error); alert("Error al armar la escuadra."); } finally { btn.disabled = false; btn.innerText = "Reclutar 🚀"; }
         });
 
-        // 14. PUBLICACIÓN PRINCIPAL (AQUÍ ESTÁ EL FIX DE PORCENTAJE)
+        // 14. PUBLICACIÓN PRINCIPAL
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
             const textoCrudo = document.getElementById("texto-publicacion").value.trim(); 
@@ -712,16 +709,16 @@
                         const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`; 
                         
                         const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgPublicando, "Subiendo 3D...");
-                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "3d_model"; } else { throw new Error("Cloudinary no devolvió enlace."); } 
+                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "3d_model"; } else { throw new Error("Cloudinary falló."); } 
                     }
-                    // IMÁGENES NORMALES O TILT 3D (CERO COMPRESIÓN)
+                    // IMÁGENES NORMALES
                     else if (archivoMedia.type.startsWith("image/")) { 
                         const formData = new FormData(); 
                         formData.append("image", archivoMedia); 
                         const urlImgbb = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
                         
-                        const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgPublicando, "Subiendo Original...");
-                        if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = checkFoto3D ? "image_3d" : "image"; } else { throw new Error("El servidor de ImgBB rechazó la imagen."); }
+                        const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgPublicando, "Subiendo Foto...");
+                        if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = checkFoto3D ? "image_3d" : "image"; } else { throw new Error("ImgBB rechazó la foto."); }
                     } 
                     // VIDEOS
                     else if (archivoMedia.type.startsWith("video/")) { 
@@ -735,7 +732,7 @@
                     }
                 }
                 
-                msgPublicando.innerText = "Sellando datos y publicando... 🔒";
+                msgPublicando.innerText = "Sellando datos... 🔒";
                 await addDoc(collection(db, "publicaciones"), { tipo: "normal", autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image" || tipoFinal === "image_3d") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 
                 document.getElementById("texto-publicacion").value = ""; 
@@ -806,7 +803,6 @@
                             // RENDERS VISUALES (REPARADOR DE MODELOS VIEJOS INCLUIDO 🧊)
                             if (urlArchivo && post.tipo !== "escuadra") { 
                                 const urlLower = urlArchivo.toLowerCase();
-                                // Aquí está la mejora: usamos includes en vez de endsWith para rescatar viejos
                                 const es3D = urlLower.includes('.glb') || urlLower.includes('.gltf') || urlLower.includes('.gbl') || tipoArchivo === "3d_model" || tipoArchivo === "3d" || tipoArchivo === "auto";
 
                                 if (es3D) { 
@@ -898,44 +894,44 @@
         document.getElementById("feed").addEventListener("click", async (e) => { 
             
             // Reacciones
-            if (e.target.classList.contains("emoji")) { 
+            if (e.target && e.target.classList && e.target.classList.contains("emoji")) { 
                 const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor"); 
                 const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; 
                 try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) {} 
             } 
             
             // Eliminar Post
-            if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { 
+            if (e.target && e.target.classList && (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar'))) { 
                 const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); const postId = btn.getAttribute("data-id"); 
                 if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) {} } 
             } 
             
             // Editar Post
-            if (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar')) { 
+            if (e.target && e.target.classList && (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar'))) { 
                 const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar'); const postId = btn.getAttribute("data-id"); const textoRAW = btn.getAttribute("data-raw"); 
                 document.getElementById("id-post-editar").value = postId; document.getElementById("texto-editar").value = textoRAW; document.getElementById("modal-editar").style.display = "flex"; 
             } 
             
             // Borrar Comentario
-            if (e.target.classList.contains("btn-borrar-comentario")) { 
+            if (e.target && e.target.classList && e.target.classList.contains("btn-borrar-comentario")) { 
                 const postId = e.target.getAttribute("data-postid"); const index = e.target.getAttribute("data-index"); 
                 if (confirm("¿Eliminar este comentario?")) { try { const docRef = doc(db, "publicaciones", postId); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const post = docSnap.data(); const comentarioAEliminar = post.comentarios[index]; await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) }); } } catch (err) {} } 
             } 
             
             // Enviar Comentario
-            if (e.target.classList.contains("btn-enviar-comentario")) { 
+            if (e.target && e.target.classList && e.target.classList.contains("btn-enviar-comentario")) { 
                 const postId = e.target.getAttribute("data-id"); const autorDelPost = e.target.getAttribute("data-autor"); const inputElemento = document.getElementById(`input-comentario-${postId}`); const textoComentario = inputElemento.value.trim(); 
                 if (textoComentario !== "") { e.target.disabled = true; const comentSeguro = encriptar(textoComentario); try { const ref = doc(db, "publicaciones", postId); const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentSeguro }; await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) }); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); } inputElemento.value = ""; } catch (err) { alert("Error al comentar."); } finally { e.target.disabled = false; } } 
             } 
             
             // Unirse a Escuadra
-            if (e.target.classList.contains("btn-unirse")) { 
+            if (e.target && e.target.classList && e.target.classList.contains("btn-unirse")) { 
                 const postId = e.target.getAttribute("data-id"); 
                 try { const ref = doc(db, "publicaciones", postId); const act = {}; act[`participantes.${llaveUsuarioActual}`] = { nombre: usuarioActual.displayName || "Usuario", foto: usuarioActual.photoURL || null }; await updateDoc(ref, act); const docSnap = await getDoc(ref); if(docSnap.exists()) { const post = docSnap.data(); await addDoc(collection(db, "notificaciones"), { para: post.autor, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "escuadra", leida: false, fecha: serverTimestamp() }); } } catch(err) {} 
             } 
             
             // Salir de Escuadra
-            if (e.target.classList.contains("btn-salir-escuadra")) { 
+            if (e.target && e.target.classList && e.target.classList.contains("btn-salir-escuadra")) { 
                 const postId = e.target.getAttribute("data-id"); 
                 try { const act = {}; act[`participantes.${llaveUsuarioActual}`] = deleteField(); await updateDoc(doc(db, "publicaciones", postId), act); } catch(err) {} 
             } 
