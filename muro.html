@@ -74,7 +74,6 @@
         .insignia-seguridad { position: absolute; top: -10px; right: 10px; background: #00C851; color: white; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         textarea { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; box-sizing: border-box; resize: none; font-size: 16px; background-color: var(--fondo); color: var(--texto-principal); }
         .acciones-publicar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; flex-wrap: wrap; }
-        /* Ajuste de ancho para los inputs de archivos */
         input[type="file"] { font-size: 14px; color: var(--texto-secundario); max-width: 40%; }
         .btn-publicar { background-color: var(--color-primario); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex-grow: 1; }
         .btn-escuadra { background-color: #1a1a24; border: 2px solid #00ffcc; color: #00ffcc; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
@@ -274,7 +273,10 @@
         };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         
-        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; const CLOUDINARY_CLOUD_NAME = "dizktanb9"; const CLOUDINARY_UPLOAD_PRESET = "wueychat_universal";
+        const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
+        
+        // ¡LA CLAVE ESTÁ AQUÍ! NUEVO PRESET UNIVERSAL
+        const CLOUDINARY_UPLOAD_PRESET = "wueychat_universal"; 
 
         let usuarioActual = null; let llaveUsuarioActual = "anonimo";
         let diccionarioHistorias = {}; let timeoutVisor = null; let autorViendo = null;
@@ -373,14 +375,13 @@
             } catch (error) { alert("Error al subir estado."); } finally { document.getElementById("mensaje-subiendo-historia").style.display = "none"; }
         });
 
-        function abrirVisor(correoAutor) { /* ...código minificado del visor... */ autorViendo = correoAutor; const usuarioData = diccionarioHistorias[correoAutor]; if(!usuarioData || usuarioData.estados.length === 0) return; const estadoActual = usuarioData.estados[usuarioData.estados.length - 1]; document.getElementById("visor-estados").style.display = "flex"; document.getElementById("visor-nombre").innerText = usuarioData.autorNombre; document.getElementById("visor-avatar").src = usuarioData.autorFoto || "https://i.ibb.co/Vv0F8sP/default-avatar.png"; if(correoAutor === usuarioActual.email) { document.getElementById("visor-interaccion").style.display = "none"; } else { document.getElementById("visor-interaccion").style.display = "flex"; document.getElementById("input-respuesta-estado").value = ""; } const cajaContenido = document.getElementById("visor-contenido"); const barra = document.getElementById("barra-progreso"); cajaContenido.innerHTML = ""; barra.style.width = "0%"; barra.style.transition = "none"; if(estadoActual.mediaType === "video") { const vid = document.createElement("video"); vid.className = "visor-media-video"; vid.src = estadoActual.mediaUrl; vid.autoplay = true; vid.playsInline = true; cajaContenido.appendChild(vid); vid.onloadedmetadata = () => { setTimeout(() => { barra.style.transition = `width ${vid.duration}s linear`; barra.style.width = "100%"; }, 50); }; vid.onended = cerrarVisor; } else { const img = document.createElement("img"); img.className = "visor-media-img"; img.src = estadoActual.mediaUrl; cajaContenido.appendChild(img); setTimeout(() => { barra.style.transition = `width 5s linear`; barra.style.width = "100%"; }, 50); timeoutVisor = setTimeout(cerrarVisor, 5000); } }
+        function abrirVisor(correoAutor) { autorViendo = correoAutor; const usuarioData = diccionarioHistorias[correoAutor]; if(!usuarioData || usuarioData.estados.length === 0) return; const estadoActual = usuarioData.estados[usuarioData.estados.length - 1]; document.getElementById("visor-estados").style.display = "flex"; document.getElementById("visor-nombre").innerText = usuarioData.autorNombre; document.getElementById("visor-avatar").src = usuarioData.autorFoto || "https://i.ibb.co/Vv0F8sP/default-avatar.png"; if(correoAutor === usuarioActual.email) { document.getElementById("visor-interaccion").style.display = "none"; } else { document.getElementById("visor-interaccion").style.display = "flex"; document.getElementById("input-respuesta-estado").value = ""; } const cajaContenido = document.getElementById("visor-contenido"); const barra = document.getElementById("barra-progreso"); cajaContenido.innerHTML = ""; barra.style.width = "0%"; barra.style.transition = "none"; if(estadoActual.mediaType === "video") { const vid = document.createElement("video"); vid.className = "visor-media-video"; vid.src = estadoActual.mediaUrl; vid.autoplay = true; vid.playsInline = true; cajaContenido.appendChild(vid); vid.onloadedmetadata = () => { setTimeout(() => { barra.style.transition = `width ${vid.duration}s linear`; barra.style.width = "100%"; }, 50); }; vid.onended = cerrarVisor; } else { const img = document.createElement("img"); img.className = "visor-media-img"; img.src = estadoActual.mediaUrl; cajaContenido.appendChild(img); setTimeout(() => { barra.style.transition = `width 5s linear`; barra.style.width = "100%"; }, 50); timeoutVisor = setTimeout(cerrarVisor, 5000); } }
         function cerrarVisor() { document.getElementById("visor-estados").style.display = "none"; document.getElementById("visor-contenido").innerHTML = ""; if(timeoutVisor) clearTimeout(timeoutVisor); autorViendo = null; }
         document.getElementById("btn-cerrar-visor").addEventListener("click", cerrarVisor);
         async function enviarRespuestaEstado(mensaje, esEmoji = false) { if(!autorViendo || autorViendo === usuarioActual.email) return; try { let textoNoti = esEmoji ? `Reaccionó a tu estado: ${mensaje}` : `Respondió a tu estado: "${mensaje}"`; await addDoc(collection(db, "notificaciones"), { para: autorViendo, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "respuesta_estado", mensajeTexto: textoNoti, leida: false, fecha: serverTimestamp() }); const toast = document.getElementById("toast-enviado"); toast.style.display = "block"; setTimeout(() => { toast.style.display = "none"; cerrarVisor(); }, 1500); } catch (err) {} }
         document.getElementById("btn-enviar-respuesta").addEventListener("click", () => { const txt = document.getElementById("input-respuesta-estado").value.trim(); if(txt) enviarRespuestaEstado(txt, false); });
         document.querySelectorAll(".visor-emoji").forEach(btn => { btn.addEventListener("click", (e) => { const emoji = e.target.getAttribute("data-emoji"); enviarRespuestaEstado(emoji, true); }); });
 
-        // --- SISTEMA DE ESCUADRAS (LFG) ---
         document.getElementById("btn-abrir-escuadra").addEventListener("click", () => document.getElementById("modal-escuadra").style.display = "flex");
         document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => document.getElementById("modal-escuadra").style.display = "none");
         
@@ -393,7 +394,7 @@
             try { await addDoc(collection(db, "publicaciones"), { tipo: "escuadra", juego: juego, cuposTotales: cupos, participantes: {}, autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: null, mediaType: null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] }); document.getElementById("juego-escuadra").value = ""; document.getElementById("cupos-escuadra").value = ""; document.getElementById("texto-escuadra").value = ""; document.getElementById("modal-escuadra").style.display = "none"; } catch (error) { console.error(error); alert("Error."); } finally { btn.disabled = false; btn.innerText = "Reclutar 🚀"; }
         });
 
-        // PUBLICAR NORMAL (AHORA CON SOPORTE 3D 🧊)
+        // PUBLICAR NORMAL (SOPORTE 3D)
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
             const textoCrudo = document.getElementById("texto-publicacion").value.trim(); 
@@ -407,19 +408,16 @@
                 if (archivoMedia) {
                     const nombreArchivo = archivoMedia.name.toLowerCase();
                     
-                    // Si es Modelo 3D (.glb o .gltf)
                     if (nombreArchivo.endsWith('.glb') || nombreArchivo.endsWith('.gltf')) {
                         document.getElementById("mensaje-publicando").innerText = "Procesando modelo 3D... 🧊"; 
                         const formData = new FormData(); 
                         formData.append("file", archivoMedia); 
                         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
-                        // Usamos "auto" o "raw" para que Cloudinary no lo confunda con una foto normal
                         const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`; 
                         const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
                         const datos = await respuesta.json(); 
                         if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "3d"; } else throw new Error(); 
                     }
-                    // Si es Imagen
                     else if (archivoMedia.type.startsWith("image/")) { 
                         document.getElementById("mensaje-publicando").innerText = "Comprimiendo imagen... 🗜️"; 
                         archivoMedia = await comprimirImagen(archivoMedia); 
@@ -429,7 +427,6 @@
                         const datosImgbb = await respuestaImgbb.json(); 
                         if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); 
                     } 
-                    // Si es Video
                     else if (archivoMedia.type.startsWith("video/")) { 
                         document.getElementById("mensaje-publicando").innerText = "Procesando video... 🎬"; 
                         const formData = new FormData(); formData.append("file", archivoMedia); formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
@@ -442,10 +439,9 @@
                 document.getElementById("mensaje-publicando").innerText = "Sellando datos... 🔒";
                 await addDoc(collection(db, "publicaciones"), { tipo: "normal", autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
-            } catch (error) { console.error(error); alert("Error al subir."); } finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀"; }
+            } catch (error) { console.error(error); alert("Error al subir. Verifica que el preset de Cloudinary exista."); } finally { btnPublicar.disabled = false; document.getElementById("mensaje-publicando").style.display = "none"; document.getElementById("mensaje-publicando").innerText = "Subiendo archivo... 🚀"; }
         });
 
-        // DIBUJAR MURO CON RENDERIZADO 3D
         function cargarPublicaciones() {
             const feedDiv = document.getElementById("feed"); const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
             onSnapshot(q, (snapshot) => {
@@ -474,21 +470,12 @@
                                 if (tipoArchivo === "video") { 
                                     htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`; 
                                 } else if (tipoArchivo === "3d") {
-                                    // NUEVO: LA CAJA MÁGICA 3D 🧊
-                                    htmlContenido += `
-                                        <model-viewer 
-                                            src="${urlArchivo}" 
-                                            auto-rotate 
-                                            camera-controls 
-                                            shadow-intensity="1" 
-                                            class="post-3d">
-                                        </model-viewer>`;
+                                    htmlContenido += `<model-viewer src="${urlArchivo}" auto-rotate camera-controls shadow-intensity="1" class="post-3d"></model-viewer>`;
                                 } else { 
                                     htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`; 
                                 } 
                             }
                             
-                            // Slots Escuadra
                             if(post.tipo === "escuadra") {
                                 const participantes = post.participantes || {}; const listaLlaves = Object.keys(participantes); const totalUnidos = listaLlaves.length; const cupos = post.cuposTotales || 1;
                                 htmlContenido += `<div class="slots-contenedor">`; Object.values(participantes).forEach(p => { let ava = p.foto ? `<img src="${p.foto}">` : p.nombre.charAt(0).toUpperCase(); htmlContenido += `<div class="slot lleno" title="${p.nombre}">${ava}</div>`; });
@@ -513,7 +500,6 @@
             });
         }
 
-        // ACCIONES DEL MURO
         document.getElementById("feed").addEventListener("click", async (e) => {
             if (e.target.classList.contains("emoji")) { const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor"); const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) { } }
             if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); const postId = btn.getAttribute("data-id"); if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { } } }
