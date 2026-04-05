@@ -3,1052 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wueychat - Muro Premium</title>
+    <title>Wueychat - Muro Premium Original</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
         :root[data-theme="light"] { 
-            --fondo: #f0f2f5; 
-            --fondo-carta: #ffffff; 
-            --texto-principal: #1c1e21; 
-            --texto-secundario: #606770; 
-            --color-primario: #1877f2; 
-            --borde: #dddfe2; 
-            --sombra: rgba(0, 0, 0, 0.1); 
-            --fondo-barra: rgba(255, 255, 255, 0.85); 
-            --fondo-comentario: #f0f2f5; 
+            --fondo: #f0f2f5; --fondo-carta: #ffffff; --texto-principal: #1c1e21; --texto-secundario: #606770; 
+            --color-primario: #1877f2; --borde: #dddfe2; --sombra: rgba(0, 0, 0, 0.1); 
+            --fondo-barra: rgba(255, 255, 255, 0.85); --fondo-comentario: #f0f2f5; 
         }
         :root[data-theme="dark"] { 
-            --fondo: #18191a; 
-            --fondo-carta: #242526; 
-            --texto-principal: #e4e6eb; 
-            --texto-secundario: #b0b3b8; 
-            --color-primario: #2e89ff; 
-            --borde: #3e4042; 
-            --sombra: rgba(0, 0, 0, 0.4); 
-            --fondo-barra: rgba(36, 37, 38, 0.85); 
-            --fondo-comentario: #3a3b3c; 
+            --fondo: #18191a; --fondo-carta: #242526; --texto-principal: #e4e6eb; --texto-secundario: #b0b3b8; 
+            --color-primario: #2e89ff; --borde: #3e4042; --sombra: rgba(0, 0, 0, 0.4); 
+            --fondo-barra: rgba(36, 37, 38, 0.85); --fondo-comentario: #3a3b3c; 
         }
 
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background-color: var(--fondo); 
-            color: var(--texto-principal); 
-            margin: 0; 
-            padding-top: 70px; 
-            padding-bottom: 80px; 
-            transition: background 0.3s ease; 
-        }
-        
-        .contenedor-principal { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 0 15px; 
-            overflow-x: hidden; 
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--fondo); color: var(--texto-principal); margin: 0; padding-top: 70px; padding-bottom: 80px; transition: background 0.3s ease; }
+        .contenedor-principal { max-width: 600px; margin: 0 auto; padding: 0 15px; overflow-x: hidden; }
 
-        .barra-superior, .barra-inferior { 
-            position: fixed; 
-            left: 0; 
-            width: 100%; 
-            box-sizing: border-box; 
-            backdrop-filter: blur(8px); 
-            background-color: var(--fondo-barra); 
-            z-index: 100; 
-            border-bottom: 1px solid var(--borde); 
-        }
+        /* BARRAS DE NAVEGACIÓN */
+        .barra-superior, .barra-inferior { position: fixed; left: 0; width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); background-color: var(--fondo-barra); z-index: 100; border-bottom: 1px solid var(--borde); }
+        .barra-superior { top: 0; height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 2px 5px var(--sombra); gap: 10px; }
+        .barra-superior h1 { color: var(--color-primario); margin: 0; font-size: 22px; font-weight: bold; display: none; }
+        @media (min-width: 500px) { .barra-superior h1 { display: block; } }
         
-        .barra-superior { 
-            top: 0; 
-            height: 65px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 0 15px; 
-            box-shadow: 0 2px 5px var(--sombra); 
-            gap: 10px; 
-        }
-        
-        .barra-superior h1 { 
-            color: var(--color-primario); 
-            margin: 0; 
-            font-size: 22px; 
-            font-weight: bold; 
-            display: none; 
-        }
-        
-        .contenedor-buscador { 
-            flex-grow: 1; 
-            max-width: 350px; 
-            position: relative; 
-        }
-        
-        .input-buscador { 
-            width: 100%; 
-            padding: 10px 15px 10px 35px; 
-            border-radius: 20px; 
-            border: 1px solid var(--borde); 
-            background-color: var(--fondo-carta); 
-            color: var(--texto-principal); 
-            font-size: 14px; 
-            box-sizing: border-box; 
-        }
-        
-        .icono-lupa { 
-            position: absolute; 
-            left: 12px; 
-            top: 10px; 
-            font-size: 14px; 
-            color: var(--texto-secundario); 
-        }
-        
-        @media (min-width: 500px) { 
-            .barra-superior h1 { display: block; } 
-        }
+        .contenedor-buscador { flex-grow: 1; max-width: 350px; position: relative; }
+        .input-buscador { width: 100%; padding: 10px 15px 10px 35px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo-carta); color: var(--texto-principal); font-size: 14px; box-sizing: border-box; }
+        .icono-lupa { position: absolute; left: 12px; top: 10px; font-size: 14px; color: var(--texto-secundario); }
 
-        .barra-inferior { 
-            bottom: 0; 
-            height: 70px; 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            border-top: 1px solid var(--borde); 
-            box-shadow: 0 -2px 5px var(--sombra); 
-            border-bottom: none; 
-        }
-        
-        .btn-icono { 
-            background: none; 
-            border: none; 
-            font-size: 24px; 
-            cursor: pointer; 
-            color: var(--texto-principal); 
-            padding: 8px; 
-            border-radius: 50%; 
-            transition: transform 0.2s ease; 
-        }
-        
+        .barra-inferior { bottom: 0; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--borde); box-shadow: 0 -2px 5px var(--sombra); border-bottom: none; }
+        .btn-icono { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--texto-principal); padding: 8px; border-radius: 50%; transition: transform 0.2s ease; }
         .btn-icono:active { transform: scale(0.9); }
-        
-        .nav-link { 
-            text-decoration: none; 
-            color: var(--texto-principal); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            font-size: 12px; 
-            font-weight: bold; 
-        }
-        
-        .nav-link.activo .btn-icono { 
-            color: var(--color-primario); 
-            background-color: rgba(24, 119, 242, 0.1); 
-        }
-        
-        .btn-eliminar-top { 
-            background: none; 
-            border: none; 
-            color: #ff4d4d; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 14px; 
-            padding: 8px; 
-            border-radius: 8px; 
-        }
+        .nav-link { text-decoration: none; color: var(--texto-principal); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: bold; }
+        .nav-link.activo .btn-icono { color: var(--color-primario); background-color: rgba(24, 119, 242, 0.1); }
+        .btn-eliminar-top { background: none; border: none; color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px; padding: 8px; border-radius: 8px; }
 
+        /* NOTIFICACIONES */
         .contenedor-campanita { position: relative; }
-        
-        .punto-rojo { 
-            position: absolute; 
-            top: 6px; 
-            right: 6px; 
-            width: 10px; 
-            height: 10px; 
-            background-color: #ff3b30; 
-            border-radius: 50%; 
-            border: 2px solid var(--fondo-barra); 
-            display: none; 
-        }
-        
-        .panel-notificaciones { 
-            display: none; 
-            position: absolute; 
-            top: 55px; 
-            right: -10px; 
-            width: 280px; 
-            max-height: 350px; 
-            overflow-y: auto; 
-            background-color: var(--fondo-carta); 
-            border: 1px solid var(--borde); 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-            padding: 10px; 
-            z-index: 200; 
-        }
-        
-        .noti-item { 
-            padding: 12px; 
-            border-bottom: 1px solid var(--borde); 
-            font-size: 14px; 
-            color: var(--texto-principal); 
-            border-radius: 8px; 
-            margin-bottom: 5px; 
-        }
-        
-        .noti-item.no-leida { 
-            background-color: rgba(24, 119, 242, 0.1); 
-            font-weight: bold; 
-        }
-        
+        .punto-rojo { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; border: 2px solid var(--fondo-barra); display: none; }
+        .panel-notificaciones { display: none; position: absolute; top: 55px; right: -10px; width: 280px; max-height: 350px; overflow-y: auto; background-color: var(--fondo-carta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px; z-index: 200; }
+        .noti-item { padding: 12px; border-bottom: 1px solid var(--borde); font-size: 14px; color: var(--texto-principal); border-radius: 8px; margin-bottom: 5px; }
+        .noti-item.no-leida { background-color: rgba(24, 119, 242, 0.1); font-weight: bold; }
         .noti-item strong { color: var(--color-primario); }
-        
-        .contenedor-historias { 
-            display: flex; 
-            gap: 15px; 
-            overflow-x: auto; 
-            padding: 15px 0 5px 0; 
-            margin-bottom: 20px; 
-            scrollbar-width: none; 
-        }
-        
+
+        /* HISTORIAS */
+        .contenedor-historias { display: flex; gap: 15px; overflow-x: auto; padding: 15px 0 5px 0; margin-bottom: 20px; scrollbar-width: none; }
         .contenedor-historias::-webkit-scrollbar { display: none; }
-        
-        .historia-item { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            min-width: 75px; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .historia-avatar-contenedor { 
-            width: 64px; 
-            height: 64px; 
-            border-radius: 50%; 
-            padding: 3px; 
-            background: none; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            margin-bottom: 5px; 
-            transition: transform 0.2s; 
-        }
-        
-        .historia-avatar-contenedor.activa { 
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); 
-        }
-        
-        .historia-avatar { 
-            width: 60px; 
-            height: 60px; 
-            border-radius: 50%; 
-            border: 3px solid var(--fondo); 
-            object-fit: cover; 
-            background-color: var(--fondo-carta); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 24px; 
-            font-weight: bold; 
-            color: var(--texto-secundario); 
-        }
-        
-        .historia-nombre { 
-            font-size: 12px; 
-            color: var(--texto-principal); 
-            font-weight: 600; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            max-width: 75px; 
-            text-align: center; 
-        }
-        
-        .btn-agregar-icono { 
-            position: absolute; 
-            bottom: 20px; 
-            right: 0; 
-            background-color: var(--color-primario); 
-            color: white; 
-            border-radius: 50%; 
-            width: 22px; 
-            height: 22px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 16px; 
-            font-weight: bold; 
-            border: 3px solid var(--fondo); 
-        }
+        .historia-item { display: flex; flex-direction: column; align-items: center; min-width: 75px; cursor: pointer; position: relative; }
+        .historia-avatar-contenedor { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: none; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; transition: transform 0.2s; }
+        .historia-avatar-contenedor.activa { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .historia-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--fondo); object-fit: cover; background-color: var(--fondo-carta); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: var(--texto-secundario); }
+        .historia-nombre { font-size: 12px; color: var(--texto-principal); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; text-align: center; }
+        .btn-agregar-icono { position: absolute; bottom: 20px; right: 0; background-color: var(--color-primario); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 3px solid var(--fondo); }
 
-        /* CAJA ESTILO FACEBOOK PARA ABRIR MODAL */
-        .caja-crear-post-falsa { 
-            background-color: var(--fondo-carta); 
-            padding: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 2px 8px var(--sombra); 
-            margin-bottom: 25px; 
-            border: 1px solid var(--borde); 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            cursor: pointer; 
-            transition: background 0.2s; 
-        }
-        
+        /* VISOR DE ESTADOS */
+        .visor-estados { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1000; flex-direction: column; }
+        .visor-barra-progreso { width: 100%; height: 3px; background-color: rgba(255,255,255,0.3); margin-top: 10px; display: flex; }
+        .visor-progreso-lleno { height: 100%; background-color: #fff; width: 0%; transition: width linear; }
+        .visor-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 15px; color: white; position: absolute; top: 15px; width: 100%; box-sizing: border-box; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .visor-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .visor-nombre-texto { font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .btn-cerrar-visor { background: none; border: none; color: white; font-size: 28px; cursor: pointer; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .visor-contenido { flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        .visor-media-img, .visor-media-video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .visor-interaccion { padding: 15px; display: flex; gap: 10px; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-respuesta { flex-grow: 1; padding: 12px 15px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.5); background-color: transparent; color: white; font-size: 15px; }
+        .btn-enviar-respuesta { background-color: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .visor-emojis { display: flex; gap: 10px; margin-left: 5px; }
+        .visor-emoji { font-size: 24px; cursor: pointer; }
+        .toast-enviado { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 20; }
+
+        /* CAJA ESTILO FACEBOOK */
+        .caja-crear-post-falsa { background-color: var(--fondo-carta); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 25px; border: 1px solid var(--borde); display: flex; align-items: center; gap: 15px; cursor: pointer; transition: background 0.2s; }
         .caja-crear-post-falsa:hover { background-color: var(--fondo); }
-        
-        .caja-crear-post-falsa img { 
-            width: 40px; 
-            height: 40px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-        }
-        
-        .caja-crear-post-falsa .texto-falso { 
-            flex-grow: 1; 
-            background: var(--fondo); 
-            padding: 10px 15px; 
-            border-radius: 20px; 
-            color: var(--texto-secundario); 
-            font-size: 15px; 
-            border: 1px solid var(--borde); 
-        }
-        
-        .iconos-rapidos { 
-            display: flex; 
-            gap: 10px; 
-            font-size: 20px; 
-        }
+        .caja-crear-post-falsa img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .caja-crear-post-falsa .texto-falso { flex-grow: 1; background: var(--fondo); padding: 10px 15px; border-radius: 20px; color: var(--texto-secundario); font-size: 15px; border: 1px solid var(--borde); }
+        .iconos-rapidos { display: flex; gap: 10px; font-size: 20px; }
 
-        /* MODALES */
-        .modal-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            z-index: 500; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 15px; 
-            box-sizing: border-box; 
-            backdrop-filter: blur(5px); 
-        }
+        /* MODALES GLOBALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 500; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--fondo-carta); padding: 20px; border-radius: 15px; width: 100%; max-width: 500px; border: 1px solid var(--borde); box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; animation: subirModal 0.3s ease; }
+        @keyframes subirModal { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-box h3 { margin-top: 0; color: var(--texto-principal); text-align: center; border-bottom: 1px solid var(--borde); padding-bottom: 10px; }
+        .btn-cerrar-modal { position: absolute; top: 15px; right: 15px; background: var(--fondo); border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--texto-principal); }
+        .input-modal { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto-principal); margin-bottom: 15px; resize: none; font-family: inherit; font-size: 16px; box-sizing: border-box; }
         
-        .modal-box { 
-            background: var(--fondo-carta); 
-            padding: 20px; 
-            border-radius: 15px; 
-            width: 100%; 
-            max-width: 500px; 
-            border: 1px solid var(--borde); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            position: relative; 
-            animation: subirModal 0.3s ease; 
-        }
-        
-        @keyframes subirModal { 
-            from { transform: translateY(50px); opacity: 0; } 
-            to { transform: translateY(0); opacity: 1; } 
-        }
-        
-        .modal-box h3 { 
-            margin-top: 0; 
-            color: var(--texto-principal); 
-            text-align: center; 
-            border-bottom: 1px solid var(--borde); 
-            padding-bottom: 10px; 
-        }
-        
-        .btn-cerrar-modal { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            background: var(--fondo); 
-            border: none; 
-            width: 30px; 
-            height: 30px; 
-            border-radius: 50%; 
-            font-weight: bold; 
-            cursor: pointer; 
-            color: var(--texto-principal); 
-        }
-        
-        .input-modal { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 8px; 
-            border: 1px solid var(--borde); 
-            background: var(--fondo); 
-            color: var(--texto-principal); 
-            margin-bottom: 15px; 
-            resize: none; 
-            font-family: inherit; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-        }
-        
-        /* Modal Crear Publicación (El Nuevo) */
-        #texto-publicacion { 
-            font-size: 18px; 
-            border: none; 
-            background: transparent; 
-            padding: 0; 
-            margin-bottom: 15px; 
-            height: 100px; 
-            color: var(--texto-principal);
-        }
-        
+        /* MODAL CREAR PUBLICACIÓN */
+        #texto-publicacion { font-size: 18px; border: none; background: transparent; padding: 0; margin-bottom: 15px; height: 100px; width: 100%; resize: none; color: var(--texto-principal); }
         #texto-publicacion:focus { outline: none; }
+        .opciones-publicacion { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--borde); padding-top: 15px; margin-bottom: 15px; }
+        .opcion-fila { display: flex; align-items: center; gap: 10px; background: var(--fondo); padding: 10px; border-radius: 8px; border: 1px solid var(--borde); font-weight: bold; font-size: 14px; color: var(--texto-principal); cursor: pointer; }
+        .opcion-fila input[type="file"] { font-size: 12px; max-width: 200px; }
+        .toggle-3d { accent-color: #1877f2; width: 18px; height: 18px; cursor: pointer; }
         
-        .opciones-publicacion { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            border-top: 1px solid var(--borde); 
-            padding-top: 15px; 
-            margin-bottom: 15px; 
-        }
-        
-        .opcion-fila { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            background: var(--fondo); 
-            padding: 10px; 
-            border-radius: 8px; 
-            border: 1px solid var(--borde); 
-            font-weight: bold; 
-            font-size: 14px; 
-            color: var(--texto-principal); 
-            cursor: pointer; 
-        }
-        
-        .opcion-fila input[type="file"] { 
-            font-size: 12px; 
-            max-width: 200px; 
-        }
-        
-        .toggle-3d { 
-            accent-color: #1877f2; 
-            width: 18px; 
-            height: 18px; 
-            cursor: pointer; 
-        }
-        
-        .btn-publicar { 
-            background-color: var(--color-primario); 
-            color: white; 
-            border: none; 
-            padding: 12px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            font-size: 16px; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: transform 0.2s; 
-        }
-        
+        .btn-publicar { background-color: var(--color-primario); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: transform 0.2s; }
         .btn-publicar:active { transform: scale(0.98); }
         .btn-publicar:disabled { background-color: #888; cursor: not-allowed; }
+        #error-publicacion { display: none; background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 15px; }
 
-        /* Modal Escuadra */
-        .modal-box.gamer { 
-            background: #1a1a24; 
-            border: 1px solid #00ffcc; 
-            color: white; 
-        }
-        
-        .modal-box.gamer h3 { 
-            color: #00ffcc; 
-            border-bottom-color: #333; 
-        }
-        
-        .modal-box.gamer .input-modal { 
-            background: #16161e; 
-            border-color: #444; 
-            color: white; 
-        }
-        
-        .btn-accion-modal { 
-            flex: 1; 
-            padding: 10px; 
-            border-radius: 8px; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
+        /* MODAL ESCUADRAS GAMER */
+        .modal-box.gamer { background: #1a1a24; border: 1px solid #00ffcc; color: white; }
+        .modal-box.gamer h3 { color: #00ffcc; border-bottom-color: #333; }
+        .modal-box.gamer .input-modal { background: #16161e; border-color: #444; color: white; }
+        .btn-accion-modal { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
 
-        /* Errores en el Modal */
-        #error-publicacion { 
-            display: none; 
-            background: rgba(255, 77, 77, 0.1); 
-            color: #ff4d4d; 
-            border: 1px solid rgba(255, 77, 77, 0.3); 
-            padding: 10px; 
-            border-radius: 8px; 
-            font-size: 13px; 
-            font-weight: bold; 
-            text-align: center; 
-            margin-bottom: 15px; 
-        }
-
-        /* Visor de Estados */
-        .visor-estados { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background-color: #000; 
-            z-index: 1000; 
-            flex-direction: column; 
-        }
+        /* POSTS EN EL MURO */
+        .post { background-color: var(--fondo-carta); padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px; border: 1px solid var(--borde); position: relative; }
+        .post-cabecera { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+        .post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primario); background-color: var(--color-primario); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        .info-autor { display: flex; flex-direction: column; }
+        .post-autor a { font-weight: bold; color: var(--texto-principal); font-size: 16px; text-decoration: none; }
+        .post-fecha { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
+        .post-texto { color: var(--texto-principal); font-size: 16px; line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; }
+        .post-imagen { max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 5px var(--sombra); }
+        .post-video { max-width: 100%; border-radius: 8px; margin-top: 8px; outline: none; background-color: #000; box-shadow: 0 2px 5px var(--sombra); }
         
-        .visor-barra-progreso { 
-            width: 100%; 
-            height: 3px; 
-            background-color: rgba(255,255,255,0.3); 
-            margin-top: 10px; 
-            display: flex; 
-        }
-        
-        .visor-progreso-lleno { 
-            height: 100%; 
-            background-color: #fff; 
-            width: 0%; 
-            transition: width linear; 
-        }
-        
-        .visor-cabecera { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 15px; 
-            color: white; 
-            position: absolute; 
-            top: 15px; 
-            width: 100%; 
-            box-sizing: border-box; 
-            z-index: 10; 
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); 
-        }
-        
-        .visor-avatar-img { 
-            width: 40px; 
-            height: 40px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            border: 2px solid white; 
-        }
-        
-        .visor-nombre-texto { 
-            font-weight: bold; 
-            font-size: 16px; 
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8); 
-        }
-        
-        .btn-cerrar-visor { 
-            background: none; 
-            border: none; 
-            color: white; 
-            font-size: 28px; 
-            cursor: pointer; 
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8); 
-        }
-        
-        .visor-contenido { 
-            flex-grow: 1; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            overflow: hidden; 
-            position: relative; 
-        }
-        
-        .visor-media-img { 
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
-        }
-        
-        .visor-media-video { 
-            width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
-            outline: none; 
-        }
-        
-        .visor-interaccion { 
-            padding: 15px; 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); 
-            position: absolute; 
-            bottom: 0; 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-        
-        .input-respuesta { 
-            flex-grow: 1; 
-            padding: 12px 15px; 
-            border-radius: 25px; 
-            border: 1px solid rgba(255,255,255,0.5); 
-            background-color: transparent; 
-            color: white; 
-            font-size: 15px; 
-        }
-        
-        .btn-enviar-respuesta { 
-            background-color: white; 
-            color: black; 
-            border: none; 
-            border-radius: 50%; 
-            width: 40px; 
-            height: 40px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 18px; 
-        }
-        
-        .visor-emojis { 
-            display: flex; 
-            gap: 10px; 
-            margin-left: 5px; 
-        }
-        
-        .visor-emoji { 
-            font-size: 24px; 
-            cursor: pointer; 
-        }
-        
-        .toast-enviado { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: rgba(0,0,0,0.7); 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 20px; 
-            font-weight: bold; 
-            display: none; 
-            z-index: 20; 
-        }
-
-        /* ESTILOS DE PUBLICACIONES EN EL MURO */
-        .post { 
-            background-color: var(--fondo-carta); 
-            padding: 18px; 
-            border-radius: 12px; 
-            box-shadow: 0 2px 8px var(--sombra); 
-            margin-bottom: 20px; 
-            border: 1px solid var(--borde); 
-            position: relative;
-        }
-        
-        .insignia-seguridad { 
-            position: absolute; 
-            top: -10px; 
-            right: 10px; 
-            background: #00C851; 
-            color: white; 
-            font-size: 10px; 
-            font-weight: bold; 
-            padding: 3px 8px; 
-            border-radius: 10px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-        }
-        
-        .post-cabecera { 
-            display: flex; 
-            align-items: center; 
-            margin-bottom: 12px; 
-            gap: 12px; 
-        }
-        
-        .post-avatar { 
-            width: 42px; 
-            height: 42px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            border: 2px solid var(--color-primario); 
-            background-color: var(--color-primario); 
-            color: white; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-weight: bold; 
-            font-size: 18px; 
-        }
-        
-        .info-autor { 
-            display: flex; 
-            flex-direction: column; 
-        }
-        
-        .post-autor a { 
-            font-weight: bold; 
-            color: var(--texto-principal); 
-            font-size: 16px; 
-            text-decoration: none; 
-        }
-        
-        .post-fecha { 
-            font-size: 12px; 
-            color: var(--texto-secundario); 
-            margin-top: 2px; 
-        }
-        
-        .post-texto { 
-            color: var(--texto-principal); 
-            font-size: 16px; 
-            line-height: 1.5; 
-            margin-bottom: 10px; 
-            white-space: pre-wrap; 
-        }
-        
-        .post-imagen { 
-            max-width: 100%; 
-            border-radius: 8px; 
-            margin-top: 8px; 
-            box-shadow: 0 2px 5px var(--sombra); 
-        }
-        
-        .post-video { 
-            max-width: 100%; 
-            border-radius: 8px; 
-            margin-top: 8px; 
-            outline: none; 
-            background-color: #000; 
-            box-shadow: 0 2px 5px var(--sombra); 
-        }
-        
-        /* 🧊 ESTILOS DEL RENDER 3D MODEL-VIEWER */
-        .post-3d-model { 
-            width: 100%; 
-            height: 320px; 
-            border-radius: 8px; 
-            margin-top: 8px; 
-            background: linear-gradient(145deg, #e4e6eb, #ffffff); 
-            box-shadow: 0 2px 5px var(--sombra); 
-            outline: none; 
-            cursor: grab; 
-        }
-        
-        :root[data-theme="dark"] .post-3d-model { 
-            background: linear-gradient(145deg, #18191a, #242526); 
-        }
-        
+        /* 🧊 RENDER 3D MODEL-VIEWER */
+        .post-3d-model { width: 100%; height: 320px; border-radius: 8px; margin-top: 8px; background: linear-gradient(145deg, #e4e6eb, #ffffff); box-shadow: 0 2px 5px var(--sombra); outline: none; cursor: grab; }
+        :root[data-theme="dark"] .post-3d-model { background: linear-gradient(145deg, #18191a, #242526); }
         .post-3d-model:active { cursor: grabbing; }
 
-        /* 🧊 ESTILOS DE LA FOTO CON EFECTO 3D (TILT) */
-        .contenedor-foto-3d { 
-            perspective: 1000px; 
-            width: 100%; 
-            margin-top: 8px; 
-            display: flex; 
-            justify-content: center; 
-        }
-        
-        .img-tilt { 
-            max-width: 100%; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
-            transition: transform 0.1s ease-out; 
-            cursor: crosshair; 
-        }
+        /* 🧊 FOTO 3D TILT EFFECT */
+        .contenedor-foto-3d { perspective: 1000px; width: 100%; margin-top: 8px; display: flex; justify-content: center; }
+        .img-tilt { max-width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: transform 0.1s ease-out; cursor: crosshair; }
 
-        /* DISEÑO DE TARJETA GAMER (ESCUADRA) */
-        .post.escuadra { 
-            background: linear-gradient(145deg, #16161e, #1a1a24); 
-            border: 2px solid #00ffcc; 
-            color: white; 
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2); 
-        }
-        
+        /* ESCUADRAS GAMER (ESTILOS) */
+        .post.escuadra { background: linear-gradient(145deg, #16161e, #1a1a24); border: 2px solid #00ffcc; color: white; box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2); }
         .post.escuadra .post-autor a { color: #00ffcc; }
         .post.escuadra .post-fecha { color: #888; }
         .post.escuadra .post-texto { color: #e4e6eb; }
-        
-        .insignia-juego { 
-            background: #00ffcc; 
-            color: #16161e; 
-            font-size: 12px; 
-            font-weight: bold; 
-            padding: 4px 10px; 
-            border-radius: 20px; 
-            display: inline-block; 
-            margin-bottom: 10px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-        }
-        
-        .slots-contenedor { 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 15px; 
-            margin-bottom: 15px; 
-            flex-wrap: wrap; 
-        }
-        
-        .slot { 
-            width: 45px; 
-            height: 45px; 
-            border-radius: 50%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-weight: bold; 
-            font-size: 18px; 
-        }
-        
-        .slot.lleno { 
-            border: 2px solid #00ffcc; 
-            background-color: #1a1a24; 
-            color: white; 
-        }
-        
-        .slot.lleno img { 
-            width: 100%; 
-            height: 100%; 
-            border-radius: 50%; 
-            object-fit: cover; 
-        }
-        
-        .slot.vacio { 
-            border: 2px dashed #555; 
-            color: #555; 
-            background: rgba(0,0,0,0.3); 
-        }
-        
-        .btn-unirse { 
-            background-color: #00ffcc; 
-            color: #16161e; 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: 0.2s; 
-            font-size: 15px; 
-        }
-        
+        .insignia-juego { background: #00ffcc; color: #16161e; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .slots-contenedor { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .slot { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        .slot.lleno { border: 2px solid #00ffcc; background-color: #1a1a24; color: white; }
+        .slot.lleno img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .slot.vacio { border: 2px dashed #555; color: #555; background: rgba(0,0,0,0.3); }
+        .btn-unirse { background-color: #00ffcc; color: #16161e; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 15px; }
         .btn-unirse:hover { background-color: #00ccaa; }
-        
-        .btn-salir-escuadra { 
-            background-color: transparent; 
-            border: 2px solid #ff4d4d; 
-            color: #ff4d4d; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: 0.2s; 
-            font-size: 15px; 
-        }
-        
-        .btn-salir-escuadra:hover { 
-            background-color: #ff4d4d; 
-            color: white; 
-        }
-        
-        .btn-lleno { 
-            background-color: #444; 
-            color: #888; 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: not-allowed; 
-            width: 100%; 
-            font-size: 15px; 
-        }
+        .btn-salir-escuadra { background-color: transparent; border: 2px solid #ff4d4d; color: #ff4d4d; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 15px; }
+        .btn-salir-escuadra:hover { background-color: #ff4d4d; color: white; }
+        .btn-lleno { background-color: #444; color: #888; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: not-allowed; width: 100%; font-size: 15px; }
 
-        /* Reacciones y Comentarios */
-        .contenedor-reacciones { 
-            position: relative; 
-            margin-top: 15px; 
-            padding-top: 12px; 
-            border-top: 1px solid var(--borde); 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-        }
-        
+        /* REACCIONES Y COMENTARIOS */
+        .contenedor-reacciones { position: relative; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; }
         .post.escuadra .contenedor-reacciones { border-top: 1px solid #333; }
-        
-        .seccion-izquierda { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        
-        .btn-reaccionar-premium { 
-            background-color: var(--fondo); 
-            border: 1px solid var(--borde); 
-            color: var(--texto-secundario); 
-            font-weight: bold; 
-            cursor: pointer; 
-            padding: 8px 15px; 
-            border-radius: 20px; 
-            font-size: 14px; 
-        }
-        
-        .post.escuadra .btn-reaccionar-premium { 
-            background-color: #222; 
-            border-color: #444; 
-            color: #aaa; 
-        }
-        
-        .menu-emojis { 
-            display: none; 
-            position: absolute; 
-            bottom: 50px; 
-            left: 0; 
-            background: var(--fondo-carta); 
-            padding: 5px 10px; 
-            border-radius: 30px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-            gap: 10px; 
-            z-index: 10; 
-            border: 1px solid var(--borde); 
-        }
-        
-        .post.escuadra .menu-emojis { 
-            background: #1a1a24; 
-            border-color: #333; 
-        }
-        
+        .seccion-izquierda { display: flex; align-items: center; gap: 8px; }
+        .btn-reaccionar-premium { background-color: var(--fondo); border: 1px solid var(--borde); color: var(--texto-secundario); font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .post.escuadra .btn-reaccionar-premium { background-color: #222; border-color: #444; color: #aaa; }
+        .menu-emojis { display: none; position: absolute; bottom: 50px; left: 0; background: var(--fondo-carta); padding: 5px 10px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 10px; z-index: 10; border: 1px solid var(--borde); }
+        .post.escuadra .menu-emojis { background: #1a1a24; border-color: #333; }
         .seccion-izquierda:hover .menu-emojis { display: flex; }
-        
-        .emoji { 
-            cursor: pointer; 
-            font-size: 26px; 
-        }
-        
-        .lista-reacciones { 
-            font-size: 14px; 
-            color: var(--texto-secundario); 
-            font-weight: bold; 
-            background-color: var(--fondo); 
-            padding: 6px 12px; 
-            border-radius: 15px; 
-        }
-        
+        .emoji { cursor: pointer; font-size: 26px; }
+        .lista-reacciones { font-size: 14px; color: var(--texto-secundario); font-weight: bold; background-color: var(--fondo); padding: 6px 12px; border-radius: 15px; }
         .post.escuadra .lista-reacciones { background-color: #222; }
-        
         .seccion-derecha-botones { display: flex; gap: 8px; }
-        
-        .btn-eliminar, .btn-editar { 
-            background: none; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 16px; 
-            padding: 8px; 
-            border-radius: 8px; 
-            transition: background 0.2s; 
-        }
-        
+        .btn-eliminar, .btn-editar { background: none; border: none; font-weight: bold; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; transition: background 0.2s; }
         .btn-eliminar { color: #ff4d4d; } 
         .btn-editar { color: var(--texto-secundario); }
         .btn-eliminar:hover, .btn-editar:hover { background-color: var(--fondo); }
-        
-        .seccion-comentarios { 
-            margin-top: 15px; 
-            padding-top: 15px; 
-            border-top: 1px solid var(--borde); 
-        }
-        
+        .seccion-comentarios { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borde); }
         .post.escuadra .seccion-comentarios { border-top: 1px solid #333; }
-        
-        .comentario { 
-            background-color: var(--fondo-comentario); 
-            padding: 10px 14px; 
-            border-radius: 16px; 
-            margin-bottom: 8px; 
-            font-size: 14px; 
-            display: inline-block; 
-            max-width: 90%; 
-        }
-        
-        .post.escuadra .comentario { 
-            background-color: #222; 
-            color: #ddd; 
-        }
-        
-        .comentario strong { 
-            color: var(--texto-principal); 
-            margin-right: 5px; 
-        }
-        
+        .comentario { background-color: var(--fondo-comentario); padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 14px; display: inline-block; max-width: 90%; }
+        .post.escuadra .comentario { background-color: #222; color: #ddd; }
+        .comentario strong { color: var(--texto-principal); margin-right: 5px; }
         .post.escuadra .comentario strong { color: #00ffcc; }
-        
-        .caja-escribir-comentario { 
-            display: flex; 
-            gap: 8px; 
-            margin-top: 10px; 
-            align-items: center; 
-        }
-        
-        .input-comentario { 
-            flex-grow: 1; 
-            padding: 10px 15px; 
-            border-radius: 20px; 
-            border: 1px solid var(--borde); 
-            background-color: var(--fondo); 
-            color: var(--texto-principal); 
-            font-size: 14px; 
-        }
-        
-        .post.escuadra .input-comentario { 
-            background-color: #16161e; 
-            border-color: #444; 
-            color: white; 
-        }
-        
-        .btn-enviar-comentario { 
-            background-color: var(--color-primario); 
-            color: white; 
-            border: none; 
-            border-radius: 50%; 
-            width: 35px; 
-            height: 35px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        
-        .post.escuadra .btn-enviar-comentario { 
-            background-color: #00ffcc; 
-            color: #16161e; 
-        }
-        
-        .btn-borrar-comentario { 
-            background: none; 
-            border: none; 
-            color: #ff4d4d; 
-            cursor: pointer; 
-            font-size: 12px; 
-            margin-left: 8px; 
-            opacity: 0.7; 
-        }
-        
+        .caja-escribir-comentario { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+        .input-comentario { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--borde); background-color: var(--fondo); color: var(--texto-principal); font-size: 14px; }
+        .post.escuadra .input-comentario { background-color: #16161e; border-color: #444; color: white; }
+        .btn-enviar-comentario { background-color: var(--color-primario); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .post.escuadra .btn-enviar-comentario { background-color: #00ffcc; color: #16161e; }
+        .btn-borrar-comentario { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 12px; margin-left: 8px; opacity: 0.7; }
         .btn-borrar-comentario:hover { opacity: 1; }
     </style>
 </head>
@@ -1112,12 +236,9 @@
         <div class="modal-box gamer">
             <button class="btn-cerrar-modal" id="btn-cerrar-escuadra">✖</button>
             <h3>🎮 Armar Escuadra</h3>
-            <label style="font-size: 14px; color: #888; font-weight: bold;">Juego:</label>
-            <input type="text" id="juego-escuadra" class="input-modal" placeholder="Ej. Free Fire o Minecraft">
-            <label style="font-size: 14px; color: #888; font-weight: bold;">Cupos Disponibles:</label>
+            <input type="text" id="juego-escuadra" class="input-modal" placeholder="Juego (Ej. Free Fire o Minecraft)">
             <input type="number" id="cupos-escuadra" class="input-modal" min="1" max="10" placeholder="¿Cuántos jugadores faltan? (Ej. 3)">
-            <label style="font-size: 14px; color: #888; font-weight: bold;">Misión / Reglas (Cifrado 🔒):</label>
-            <textarea id="texto-escuadra" rows="3" class="input-modal" placeholder="Ej. Busco soporte para subir a Heroico con micro..."></textarea>
+            <textarea id="texto-escuadra" rows="3" class="input-modal" placeholder="Misión / Reglas (Cifrado 🔒)"></textarea>
             <button id="btn-publicar-escuadra" class="btn-accion-modal" style="background: #00ffcc; color: #16161e; width: 100%;">Reclutar 🚀</button>
         </div>
     </div>
@@ -1129,23 +250,23 @@
             
             <div id="error-publicacion"></div>
 
-            <textarea id="texto-publicacion" placeholder="¿Qué tienes en mente, Adriano? Usa +rojo, +azul o #hashtags"></textarea>
+            <textarea id="texto-publicacion" placeholder="¿Qué tienes en mente, Adriano? Usa +rojo o #hashtags"></textarea>
             
             <div class="opciones-publicacion">
                 <div class="opcion-fila">
-                    <span>📷 Archivo (Foto, Video o .glb)</span>
+                    <span>📷 Archivo</span>
                     <input type="file" id="archivo-publicacion" accept="image/*,video/*,.glb,.gltf,.gbl">
                 </div>
                 <div class="opcion-fila">
                     <label style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%;">
                         <input type="checkbox" id="check-foto-3d" class="toggle-3d">
-                        🧊 Activar Efecto Foto 3D (Solo para imágenes)
+                        🧊 Efecto Foto 3D (Solo imágenes normales)
                     </label>
                 </div>
             </div>
 
-            <button id="btn-publicar" class="btn-publicar">Publicar de forma Segura 🔒</button>
-            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Procesando magia original... 🚀</p>
+            <button id="btn-publicar" class="btn-publicar">Publicar Seguro 🔒</button>
+            <p id="mensaje-publicando" style="color: var(--color-primario); font-size: 14px; display: none; text-align: center; margin-top: 10px; font-weight: bold;">Iniciando subida... 🚀</p>
         </div>
     </div>
 
@@ -1186,15 +307,12 @@
         <a href="perfil.html" class="nav-link"><button class="btn-icono">👤</button><span>Perfil</span></a>
     </div>
 
-
-
-
-<script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDoc, where, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // 1. CONFIGURACIÓN DE SERVIDORES
+        // 1. CONFIGURACIÓN FIREBASE
         const firebaseConfig = { 
             apiKey: "AIzaSyBdh-HJHC5dbC7GrLrB6pHd6XGZAirNLcM", 
             authDomain: "wueychat.firebaseapp.com", 
@@ -1208,19 +326,20 @@
         const auth = getAuth(app); 
         const db = getFirestore(app);
         
+        // 2. CLAVES APIS
         const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; 
         const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
         const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
 
-        // 2. VARIABLES GLOBALES
+        // 3. VARIABLES GLOBALES
         let usuarioActual = null; 
         let llaveUsuarioActual = "anonimo"; 
         let diccionarioHistorias = {}; 
         let timeoutVisor = null; 
         let autorViendo = null;
-        const LLAVE_DIMENSIONAL = "C137_WueyChat_Secreto_2026"; 
 
-        // 3. FUNCIONES DE SEGURIDAD Y FORMATO
+        // 4. FUNCIONES DE CIFRADO Y FORMATO
+        const LLAVE_DIMENSIONAL = "C137_WueyChat_Secreto_2026"; 
         function encriptar(textoCrudo) { 
             if(!textoCrudo) return ""; 
             return CryptoJS.AES.encrypt(String(textoCrudo), LLAVE_DIMENSIONAL).toString(); 
@@ -1232,9 +351,7 @@
                 const bytes = CryptoJS.AES.decrypt(String(textoCifrado), LLAVE_DIMENSIONAL); 
                 const original = bytes.toString(CryptoJS.enc.Utf8); 
                 return original ? original : String(textoCifrado); 
-            } catch(e) { 
-                return String(textoCifrado); 
-            } 
+            } catch(e) { return String(textoCifrado); } 
         }
 
         function formatearTexto(texto) { 
@@ -1252,7 +369,7 @@
             return parseado.join('<br>').replace(/<span><\/span>/g, ''); 
         }
 
-        // 4. MODO OSCURO
+        // 5. MODO OSCURO
         const btnTheme = document.getElementById('btn-theme'); 
         const html = document.documentElement; 
         let temaGuardado = 'light'; 
@@ -1267,20 +384,17 @@
             btnTheme.innerText = nuevoTema === 'light' ? '☀️' : '🌙'; 
         });
 
-        // 5. NOTIFICACIONES
+        // 6. NOTIFICACIONES
         function escucharNotificaciones() { 
             if(!usuarioActual) return; 
             const qNoti = query(collection(db, "notificaciones"), where("para", "==", usuarioActual.email)); 
             onSnapshot(qNoti, (snapshot) => { 
                 const listaDiv = document.getElementById("lista-notificaciones"); 
                 const puntoRojo = document.getElementById("punto-rojo"); 
-                listaDiv.innerHTML = ""; 
-                let noLeidas = 0; 
-                let notis = []; 
+                listaDiv.innerHTML = ""; let noLeidas = 0; let notis = []; 
                 
                 snapshot.forEach(docSnap => { 
-                    const noti = docSnap.data(); 
-                    noti.id = docSnap.id; 
+                    const noti = docSnap.data(); noti.id = docSnap.id; 
                     if(noti.fecha) { notis.push(noti); } 
                     if (!noti.leida) noLeidas++; 
                 }); 
@@ -1289,8 +403,7 @@
                 puntoRojo.style.display = noLeidas > 0 ? "block" : "none"; 
                 
                 if (notis.length === 0) { 
-                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; 
-                    return; 
+                    listaDiv.innerHTML = "<p style='color: var(--texto-secundario); text-align: center; font-size: 14px;'>No tienes alertas nuevas.</p>"; return; 
                 } 
                 
                 notis.forEach(noti => { 
@@ -1327,7 +440,7 @@
             } 
         });
 
-        // 6. SESIÓN Y AUTENTICACIÓN
+        // 7. SESIÓN
         onAuthStateChanged(auth, (user) => { 
             if (user) { 
                 usuarioActual = user; 
@@ -1353,7 +466,7 @@
 
         document.getElementById("btn-salir-top").addEventListener("click", () => signOut(auth));
 
-        // 7. SISTEMA DE HISTORIAS
+        // 8. HISTORIAS
         function escucharHistorias() { 
             const qHistorias = query(collection(db, "estados"), orderBy("fecha", "asc")); 
             onSnapshot(qHistorias, (snapshot) => { 
@@ -1390,65 +503,88 @@
         }
 
         document.getElementById("mi-aro-historia").addEventListener("click", () => { 
-            if(document.getElementById("mi-aro-historia").classList.contains("activa")) { 
-                abrirVisor(usuarioActual.email); 
-            } 
+            if(document.getElementById("mi-aro-historia").classList.contains("activa")) { abrirVisor(usuarioActual.email); } 
         });
 
         document.getElementById("btn-mi-historia").querySelector(".btn-agregar-icono").addEventListener("click", (e) => { 
-            e.stopPropagation(); 
-            document.getElementById("archivo-historia").click(); 
+            e.stopPropagation(); document.getElementById("archivo-historia").click(); 
         });
 
+        // 9. SUBIDA XHR CON PORCENTAJE (EL CORAZÓN DEL FIX 🚀)
+        function subirArchivoConProgreso(url, formData, msgElement, textoBase) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", url, true);
+                
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const porcentaje = Math.round((e.loaded / e.total) * 100);
+                        msgElement.innerText = `${textoBase} ${porcentaje}% ⏳`;
+                    }
+                };
+                
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const respuesta = JSON.parse(xhr.responseText);
+                            resolve(respuesta);
+                        } catch (err) {
+                            reject(new Error("Error leyendo la respuesta del servidor."));
+                        }
+                    } else {
+                        try {
+                            const errData = JSON.parse(xhr.responseText);
+                            reject(new Error(errData.error ? errData.error.message : "El servidor rechazó el archivo."));
+                        } catch(e) {
+                            reject(new Error(`Error HTTP: ${xhr.status}. Archivo muy pesado o formato no aceptado.`));
+                        }
+                    }
+                };
+                
+                xhr.onerror = () => reject(new Error("Fallo de conexión. ¿El archivo es demasiado grande?"));
+                xhr.send(formData);
+            });
+        }
+
+        // 10. SUBIR HISTORIA (USANDO XHR)
         document.getElementById("archivo-historia").addEventListener("change", async (e) => { 
             let archivoMedia = e.target.files[0]; 
             if (!archivoMedia) return; 
             
-            document.getElementById("mensaje-subiendo-historia").style.display = "block"; 
+            const msgElement = document.getElementById("mensaje-subiendo-historia");
+            msgElement.style.display = "block"; 
             let urlFinal = null; 
             let tipoFinal = null; 
             
             try { 
                 if (archivoMedia.type.startsWith("image/")) { 
-                    // CERO COMPRESIÓN
                     const formData = new FormData(); 
                     formData.append("image", archivoMedia); 
-                    const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
-                    const datosImgbb = await respuestaImgbb.json(); 
-                    if (datosImgbb.success) { 
-                        urlFinal = datosImgbb.data.url; 
-                        tipoFinal = "image"; 
-                    } else throw new Error(); 
+                    const urlImgbb = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
+                    
+                    const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgElement, "Subiendo Historia...");
+                    if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = "image"; } else throw new Error(); 
                 } 
                 else if (archivoMedia.type.startsWith("video/")) { 
                     const formData = new FormData(); 
                     formData.append("file", archivoMedia); 
                     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
                     const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; 
-                    const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
-                    const datos = await respuesta.json(); 
-                    if (datos.secure_url) { 
-                        urlFinal = datos.secure_url; 
-                        tipoFinal = "video"; 
-                    } else throw new Error(); 
+                    
+                    const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgElement, "Subiendo Video...");
+                    if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(); 
                 } 
                 
-                await addDoc(collection(db, "estados"), { 
-                    autor: usuarioActual.email, 
-                    autorNombre: usuarioActual.displayName || "Usuario", 
-                    autorFoto: usuarioActual.photoURL || null, 
-                    mediaUrl: urlFinal, 
-                    mediaType: tipoFinal, 
-                    fecha: serverTimestamp() 
-                }); 
+                await addDoc(collection(db, "estados"), { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, mediaUrl: urlFinal, mediaType: tipoFinal, fecha: serverTimestamp() }); 
                 e.target.value = ""; 
             } catch (error) { 
-                alert("Error al subir estado."); 
+                alert("Error al subir estado: " + error.message); 
             } finally { 
-                document.getElementById("mensaje-subiendo-historia").style.display = "none"; 
+                msgElement.style.display = "none"; 
             } 
         });
 
+        // 11. VISOR DE HISTORIAS
         function abrirVisor(correoAutor) { 
             autorViendo = correoAutor; 
             const usuarioData = diccionarioHistorias[correoAutor]; 
@@ -1479,90 +615,48 @@
                 vid.autoplay = true; 
                 vid.playsInline = true; 
                 cajaContenido.appendChild(vid); 
-                vid.onloadedmetadata = () => { 
-                    setTimeout(() => { 
-                        barra.style.transition = `width ${vid.duration}s linear`; 
-                        barra.style.width = "100%"; 
-                    }, 50); 
-                }; 
+                vid.onloadedmetadata = () => { setTimeout(() => { barra.style.transition = `width ${vid.duration}s linear`; barra.style.width = "100%"; }, 50); }; 
                 vid.onended = cerrarVisor; 
             } else { 
                 const img = document.createElement("img"); 
                 img.className = "visor-media-img"; 
                 img.src = estadoActual.mediaUrl; 
                 cajaContenido.appendChild(img); 
-                setTimeout(() => { 
-                    barra.style.transition = `width 5s linear`; 
-                    barra.style.width = "100%"; 
-                }, 50); 
+                setTimeout(() => { barra.style.transition = `width 5s linear`; barra.style.width = "100%"; }, 50); 
                 timeoutVisor = setTimeout(cerrarVisor, 5000); 
             } 
         }
 
-        function cerrarVisor() { 
-            document.getElementById("visor-estados").style.display = "none"; 
-            document.getElementById("visor-contenido").innerHTML = ""; 
-            if(timeoutVisor) clearTimeout(timeoutVisor); 
-            autorViendo = null; 
-        }
-        
+        function cerrarVisor() { document.getElementById("visor-estados").style.display = "none"; document.getElementById("visor-contenido").innerHTML = ""; if(timeoutVisor) clearTimeout(timeoutVisor); autorViendo = null; }
         document.getElementById("btn-cerrar-visor").addEventListener("click", cerrarVisor);
 
         async function enviarRespuestaEstado(mensaje, esEmoji = false) { 
             if(!autorViendo || autorViendo === usuarioActual.email) return; 
             try { 
                 let textoNoti = esEmoji ? `Reaccionó a tu estado: ${mensaje}` : `Respondió a tu estado: "${mensaje}"`; 
-                await addDoc(collection(db, "notificaciones"), { 
-                    para: autorViendo, 
-                    de: usuarioActual.email, 
-                    deNombre: usuarioActual.displayName || "Alguien", 
-                    tipo: "respuesta_estado", 
-                    mensajeTexto: textoNoti, 
-                    leida: false, 
-                    fecha: serverTimestamp() 
-                }); 
+                await addDoc(collection(db, "notificaciones"), { para: autorViendo, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "respuesta_estado", mensajeTexto: textoNoti, leida: false, fecha: serverTimestamp() }); 
                 const toast = document.getElementById("toast-enviado"); 
                 toast.style.display = "block"; 
                 setTimeout(() => { toast.style.display = "none"; cerrarVisor(); }, 1500); 
             } catch (err) {} 
         }
 
-        document.getElementById("btn-enviar-respuesta").addEventListener("click", () => { 
-            const txt = document.getElementById("input-respuesta-estado").value.trim(); 
-            if(txt) enviarRespuestaEstado(txt, false); 
-        });
+        document.getElementById("btn-enviar-respuesta").addEventListener("click", () => { const txt = document.getElementById("input-respuesta-estado").value.trim(); if(txt) enviarRespuestaEstado(txt, false); });
+        document.querySelectorAll(".visor-emoji").forEach(btn => { btn.addEventListener("click", (e) => { const emoji = e.target.getAttribute("data-emoji"); enviarRespuestaEstado(emoji, true); }); });
 
-        document.querySelectorAll(".visor-emoji").forEach(btn => { 
-            btn.addEventListener("click", (e) => { 
-                const emoji = e.target.getAttribute("data-emoji"); 
-                enviarRespuestaEstado(emoji, true); 
-            }); 
-        });
-
-        // 8. CONTROLES DE MODALES
+        // 12. CONTROLES DE MODALES
         document.getElementById("trigger-crear-post").addEventListener("click", () => {
             document.getElementById("modal-crear-post").style.display = "flex";
             document.getElementById("error-publicacion").style.display = "none"; 
+            document.getElementById("texto-publicacion").focus();
         });
 
-        document.getElementById("btn-cerrar-crear-post").addEventListener("click", () => {
-            document.getElementById("modal-crear-post").style.display = "none";
-        });
-        
-        document.getElementById("trigger-escuadra-rapido").addEventListener("click", (e) => { 
-            e.stopPropagation(); 
-            document.getElementById("modal-escuadra").style.display = "flex"; 
-        });
+        document.getElementById("btn-cerrar-crear-post").addEventListener("click", () => { document.getElementById("modal-crear-post").style.display = "none"; });
+        document.getElementById("trigger-escuadra-rapido").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("modal-escuadra").style.display = "flex"; });
+        document.getElementById("btn-cerrar-escuadra").addEventListener("click", () => { document.getElementById("modal-escuadra").style.display = "none"; });
+        document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => { document.getElementById("modal-escuadra").style.display = "none"; });
 
-        document.getElementById("btn-cerrar-escuadra").addEventListener("click", () => {
-            document.getElementById("modal-escuadra").style.display = "none"
-        });
-
-        document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => {
-            document.getElementById("modal-escuadra").style.display = "none"
-        });
-
-        // 9. PUBLICAR ESCUADRA
+        // 13. PUBLICAR ESCUADRA
         document.getElementById("btn-publicar-escuadra").addEventListener("click", async () => {
             const juego = document.getElementById("juego-escuadra").value.trim(); 
             const cupos = parseInt(document.getElementById("cupos-escuadra").value); 
@@ -1572,41 +666,17 @@
             if(cupos < 1 || cupos > 10) { alert("Cupos: 1 a 10."); return; }
             
             const btn = document.getElementById("btn-publicar-escuadra"); 
-            btn.disabled = true; 
-            btn.innerText = "Reclutando... ⏳";
-            
+            btn.disabled = true; btn.innerText = "Reclutando... ⏳";
             const textoSeguro = encriptar(textoCrudo);
             
             try { 
-                await addDoc(collection(db, "publicaciones"), { 
-                    tipo: "escuadra", 
-                    juego: juego, 
-                    cuposTotales: cupos, 
-                    participantes: {}, 
-                    autor: usuarioActual.email, 
-                    autorNombre: usuarioActual.displayName || "Usuario", 
-                    autorFoto: usuarioActual.photoURL || null, 
-                    texto: textoSeguro, 
-                    mediaUrl: null, 
-                    mediaType: null, 
-                    fecha: serverTimestamp(), 
-                    reacciones: {}, 
-                    comentarios: [] 
-                }); 
-                document.getElementById("juego-escuadra").value = ""; 
-                document.getElementById("cupos-escuadra").value = ""; 
-                document.getElementById("texto-escuadra").value = ""; 
+                await addDoc(collection(db, "publicaciones"), { tipo: "escuadra", juego: juego, cuposTotales: cupos, participantes: {}, autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: null, mediaType: null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] }); 
+                document.getElementById("juego-escuadra").value = ""; document.getElementById("cupos-escuadra").value = ""; document.getElementById("texto-escuadra").value = ""; 
                 document.getElementById("modal-escuadra").style.display = "none"; 
-            } catch (error) { 
-                console.error(error); 
-                alert("Error al armar la escuadra."); 
-            } finally { 
-                btn.disabled = false; 
-                btn.innerText = "Reclutar 🚀"; 
-            }
+            } catch (error) { console.error(error); alert("Error al armar la escuadra."); } finally { btn.disabled = false; btn.innerText = "Reclutar 🚀"; }
         });
 
-        // 10. PUBLICACIÓN PRINCIPAL (CERO COMPRESIÓN)
+        // 14. PUBLICACIÓN PRINCIPAL (AQUÍ ESTÁ EL FIX DE PORCENTAJE)
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
             const textoCrudo = document.getElementById("texto-publicacion").value.trim(); 
@@ -1636,73 +706,37 @@
                     
                     // ARCHIVOS 3D NATIVOS
                     if (nombreArchivo.endsWith('.glb') || nombreArchivo.endsWith('.gltf') || nombreArchivo.endsWith('.gbl')) {
-                        msgPublicando.innerText = "Procesando modelo 3D... 🧊"; 
                         const formData = new FormData(); 
                         formData.append("file", archivoMedia); 
                         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
-                        
                         const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`; 
-                        const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
-                        const datos = await respuesta.json(); 
                         
-                        if (datos.secure_url) { 
-                            urlFinal = datos.secure_url; 
-                            tipoFinal = "3d_model"; 
-                        } else { 
-                            throw new Error(datos.error ? datos.error.message : "Cloudinary rechazó el archivo 3D."); 
-                        } 
+                        const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgPublicando, "Subiendo 3D...");
+                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "3d_model"; } else { throw new Error("Cloudinary no devolvió enlace."); } 
                     }
                     // IMÁGENES NORMALES O TILT 3D (CERO COMPRESIÓN)
                     else if (archivoMedia.type.startsWith("image/")) { 
-                        msgPublicando.innerText = "Subiendo imagen en calidad original... 🚀"; 
-                        
                         const formData = new FormData(); 
-                        // NO se usa la funcion comprimirImagen()
                         formData.append("image", archivoMedia); 
-                        const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
-                        const datosImgbb = await respuestaImgbb.json(); 
+                        const urlImgbb = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
                         
-                        if (datosImgbb.success) { 
-                            urlFinal = datosImgbb.data.url; 
-                            tipoFinal = checkFoto3D ? "image_3d" : "image"; 
-                        } else {
-                            throw new Error("El servidor de ImgBB rechazó la imagen."); 
-                        }
+                        const datosImgbb = await subirArchivoConProgreso(urlImgbb, formData, msgPublicando, "Subiendo Original...");
+                        if (datosImgbb.success) { urlFinal = datosImgbb.data.url; tipoFinal = checkFoto3D ? "image_3d" : "image"; } else { throw new Error("El servidor de ImgBB rechazó la imagen."); }
                     } 
                     // VIDEOS
                     else if (archivoMedia.type.startsWith("video/")) { 
-                        msgPublicando.innerText = "Procesando video... 🎬"; 
                         const formData = new FormData(); 
                         formData.append("file", archivoMedia); 
                         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
-                        
                         const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; 
-                        const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
-                        const datos = await respuesta.json(); 
                         
-                        if (datos.secure_url) { 
-                            urlFinal = datos.secure_url; 
-                            tipoFinal = "video"; 
-                        } else { 
-                            throw new Error(datos.error ? datos.error.message : "Cloudinary rechazó el video."); 
-                        } 
+                        const datos = await subirArchivoConProgreso(urlCloudinary, formData, msgPublicando, "Subiendo Video...");
+                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else { throw new Error("Cloudinary rechazó el video."); } 
                     }
                 }
                 
                 msgPublicando.innerText = "Sellando datos y publicando... 🔒";
-                await addDoc(collection(db, "publicaciones"), { 
-                    tipo: "normal", 
-                    autor: usuarioActual.email, 
-                    autorNombre: usuarioActual.displayName || "Usuario", 
-                    autorFoto: usuarioActual.photoURL || null, 
-                    texto: textoSeguro, 
-                    mediaUrl: urlFinal, 
-                    mediaType: tipoFinal, 
-                    imagenUrl: (tipoFinal === "image" || tipoFinal === "image_3d") ? urlFinal : null, 
-                    fecha: serverTimestamp(), 
-                    reacciones: {}, 
-                    comentarios: [] 
-                });
+                await addDoc(collection(db, "publicaciones"), { tipo: "normal", autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image" || tipoFinal === "image_3d") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 
                 document.getElementById("texto-publicacion").value = ""; 
                 document.getElementById("archivo-publicacion").value = "";
@@ -1717,10 +751,11 @@
             finally { 
                 btnPublicar.disabled = false; 
                 msgPublicando.style.display = "none"; 
+                msgPublicando.innerText = "Iniciando subida... 🚀";
             }
         });
 
-        // 11. MOTOR DEL EFECTO TILT 3D PARA FOTOS
+        // 15. MOTOR DEL EFECTO TILT 3D PARA FOTOS
         function activarEfectoHolograma(elemento) {
             elemento.addEventListener('mousemove', (e) => {
                 const rect = elemento.getBoundingClientRect();
@@ -1735,7 +770,7 @@
             });
         }
 
-        // 12. RENDERIZADO DEL MURO
+        // 16. RENDERIZADO DEL MURO
         function cargarPublicaciones() { 
             const feedDiv = document.getElementById("feed"); 
             const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc")); 
@@ -1760,22 +795,19 @@
                             let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`; 
                             let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`; 
                             
-                            if(post.tipo === "escuadra" && post.juego) { 
-                                htmlContenido += `<div class="insignia-juego">🎮 ${post.juego}</div>`; 
-                            } 
+                            if(post.tipo === "escuadra" && post.juego) { htmlContenido += `<div class="insignia-juego">🎮 ${post.juego}</div>`; } 
                             
                             let textoDesencriptado = desencriptar(post.texto); 
-                            if (textoDesencriptado) { 
-                                htmlContenido += `<div class="post-texto">${formatearTexto(textoDesencriptado)}</div>`; 
-                            } 
+                            if (textoDesencriptado) { htmlContenido += `<div class="post-texto">${formatearTexto(textoDesencriptado)}</div>`; } 
                             
                             const urlArchivo = post.mediaUrl || post.imagenUrl; 
                             const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null); 
                             
-                            // RENDERS VISUALES
+                            // RENDERS VISUALES (REPARADOR DE MODELOS VIEJOS INCLUIDO 🧊)
                             if (urlArchivo && post.tipo !== "escuadra") { 
                                 const urlLower = urlArchivo.toLowerCase();
-                                const es3D = urlLower.endsWith('.glb') || urlLower.endsWith('.gltf') || urlLower.endsWith('.gbl') || tipoArchivo === "3d_model" || tipoArchivo === "3d";
+                                // Aquí está la mejora: usamos includes en vez de endsWith para rescatar viejos
+                                const es3D = urlLower.includes('.glb') || urlLower.includes('.gltf') || urlLower.includes('.gbl') || tipoArchivo === "3d_model" || tipoArchivo === "3d" || tipoArchivo === "auto";
 
                                 if (es3D) { 
                                     htmlContenido += `<model-viewer src="${urlArchivo}" auto-rotate camera-controls shadow-intensity="1" class="post-3d-model"></model-viewer>`; 
@@ -1803,9 +835,7 @@
                                     let ava = p.foto ? `<img src="${p.foto}">` : p.nombre.charAt(0).toUpperCase(); 
                                     htmlContenido += `<div class="slot lleno" title="${p.nombre}">${ava}</div>`; 
                                 }); 
-                                for(let i = 0; i < (cupos - totalUnidos); i++) { 
-                                    htmlContenido += `<div class="slot vacio">+</div>`; 
-                                } 
+                                for(let i = 0; i < (cupos - totalUnidos); i++) { htmlContenido += `<div class="slot vacio">+</div>`; } 
                                 htmlContenido += `</div>`; 
                                 
                                 if(post.autor !== usuarioActual.email) { 
@@ -1819,7 +849,7 @@
                                 } 
                             } 
 
-                            // REACCIONES Y MENUS DE EDICIÓN
+                            // REACCIONES Y MENÚS DE EDICIÓN
                             const reacciones = post.reacciones || {}; 
                             const conteoEmojis = {}; 
                             let miReaccionActual = null; 
@@ -1850,187 +880,86 @@
                             htmlContenido += htmlComentarios; 
                             cajaPost.innerHTML = htmlContenido; 
                             
-                            if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { 
-                                cajaPost.style.display = "none"; 
-                            } 
+                            if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { cajaPost.style.display = "none"; } 
                             feedDiv.appendChild(cajaPost);
 
-                            // ACTIVAR EFECTO 3D EN CADA IMAGEN QUE LO TENGA
+                            // ACTIVAR EFECTO 3D EN FOTOS
                             if (tipoArchivo === "image_3d") {
                                 const imgElement = document.getElementById(`tilt-${postId}`);
                                 if(imgElement) activarEfectoHolograma(imgElement);
                             }
                         } 
-                    } catch (errorPost) { 
-                        console.error("Error cargando post individual:", errorPost); 
-                    } 
+                    } catch (errorPost) { console.error("Error cargando post:", errorPost); } 
                 }); 
             }); 
         }
 
-        // 13. DELEGACIÓN MAESTRA DE EVENTOS (BOTONES)
+        // 17. DELEGACIÓN MAESTRA DE EVENTOS (BOTONES)
         document.getElementById("feed").addEventListener("click", async (e) => { 
             
             // Reacciones
             if (e.target.classList.contains("emoji")) { 
-                const postId = e.target.getAttribute("data-id"); 
-                const emojiElegido = e.target.getAttribute("data-emoji"); 
-                const autorDelPost = e.target.getAttribute("data-autor"); 
-                const ref = doc(db, "publicaciones", postId); 
-                const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; 
-                try { 
-                    await updateDoc(ref, act); 
-                    if (autorDelPost !== usuarioActual.email) { 
-                        await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); 
-                    } 
-                } catch (err) { console.error(err); } 
+                const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor"); 
+                const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; 
+                try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) {} 
             } 
             
             // Eliminar Post
             if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { 
-                const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); 
-                const postId = btn.getAttribute("data-id"); 
-                if (confirm("¿Borrar nota para siempre?")) { 
-                    try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { console.error(err); } 
-                } 
+                const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); const postId = btn.getAttribute("data-id"); 
+                if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) {} } 
             } 
             
             // Editar Post
             if (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar')) { 
-                const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar'); 
-                const postId = btn.getAttribute("data-id"); 
-                const textoRAW = btn.getAttribute("data-raw"); 
-                document.getElementById("id-post-editar").value = postId; 
-                document.getElementById("texto-editar").value = textoRAW; 
-                document.getElementById("modal-editar").style.display = "flex"; 
+                const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar'); const postId = btn.getAttribute("data-id"); const textoRAW = btn.getAttribute("data-raw"); 
+                document.getElementById("id-post-editar").value = postId; document.getElementById("texto-editar").value = textoRAW; document.getElementById("modal-editar").style.display = "flex"; 
             } 
             
             // Borrar Comentario
             if (e.target.classList.contains("btn-borrar-comentario")) { 
-                const postId = e.target.getAttribute("data-postid"); 
-                const index = e.target.getAttribute("data-index"); 
-                if (confirm("¿Eliminar este comentario?")) { 
-                    try { 
-                        const docRef = doc(db, "publicaciones", postId); 
-                        const docSnap = await getDoc(docRef); 
-                        if (docSnap.exists()) { 
-                            const post = docSnap.data(); 
-                            const comentarioAEliminar = post.comentarios[index]; 
-                            await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) }); 
-                        } 
-                    } catch (err) { console.error(err); } 
-                } 
+                const postId = e.target.getAttribute("data-postid"); const index = e.target.getAttribute("data-index"); 
+                if (confirm("¿Eliminar este comentario?")) { try { const docRef = doc(db, "publicaciones", postId); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const post = docSnap.data(); const comentarioAEliminar = post.comentarios[index]; await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) }); } } catch (err) {} } 
             } 
             
             // Enviar Comentario
             if (e.target.classList.contains("btn-enviar-comentario")) { 
-                const postId = e.target.getAttribute("data-id"); 
-                const autorDelPost = e.target.getAttribute("data-autor"); 
-                const inputElemento = document.getElementById(`input-comentario-${postId}`); 
-                const textoComentario = inputElemento.value.trim(); 
-                
-                if (textoComentario !== "") { 
-                    e.target.disabled = true; 
-                    const comentSeguro = encriptar(textoComentario); 
-                    try { 
-                        const ref = doc(db, "publicaciones", postId); 
-                        const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentSeguro }; 
-                        await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) }); 
-                        if (autorDelPost !== usuarioActual.email) { 
-                            await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); 
-                        } 
-                        inputElemento.value = ""; 
-                    } catch (err) { 
-                        alert("Error al comentar."); 
-                    } finally { 
-                        e.target.disabled = false; 
-                    } 
-                } 
+                const postId = e.target.getAttribute("data-id"); const autorDelPost = e.target.getAttribute("data-autor"); const inputElemento = document.getElementById(`input-comentario-${postId}`); const textoComentario = inputElemento.value.trim(); 
+                if (textoComentario !== "") { e.target.disabled = true; const comentSeguro = encriptar(textoComentario); try { const ref = doc(db, "publicaciones", postId); const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentSeguro }; await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) }); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); } inputElemento.value = ""; } catch (err) { alert("Error al comentar."); } finally { e.target.disabled = false; } } 
             } 
             
             // Unirse a Escuadra
             if (e.target.classList.contains("btn-unirse")) { 
                 const postId = e.target.getAttribute("data-id"); 
-                try { 
-                    const ref = doc(db, "publicaciones", postId); 
-                    const act = {}; 
-                    act[`participantes.${llaveUsuarioActual}`] = { nombre: usuarioActual.displayName || "Usuario", foto: usuarioActual.photoURL || null }; 
-                    await updateDoc(ref, act); 
-                    
-                    const docSnap = await getDoc(ref); 
-                    if(docSnap.exists()) { 
-                        const post = docSnap.data(); 
-                        await addDoc(collection(db, "notificaciones"), { para: post.autor, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "escuadra", leida: false, fecha: serverTimestamp() }); 
-                    } 
-                } catch(err) { console.error(err); } 
+                try { const ref = doc(db, "publicaciones", postId); const act = {}; act[`participantes.${llaveUsuarioActual}`] = { nombre: usuarioActual.displayName || "Usuario", foto: usuarioActual.photoURL || null }; await updateDoc(ref, act); const docSnap = await getDoc(ref); if(docSnap.exists()) { const post = docSnap.data(); await addDoc(collection(db, "notificaciones"), { para: post.autor, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "escuadra", leida: false, fecha: serverTimestamp() }); } } catch(err) {} 
             } 
             
             // Salir de Escuadra
             if (e.target.classList.contains("btn-salir-escuadra")) { 
                 const postId = e.target.getAttribute("data-id"); 
-                try { 
-                    const ref = doc(db, "publicaciones", postId); 
-                    const act = {}; 
-                    act[`participantes.${llaveUsuarioActual}`] = deleteField(); 
-                    await updateDoc(ref, act); 
-                } catch(err) { console.error(err); } 
+                try { const act = {}; act[`participantes.${llaveUsuarioActual}`] = deleteField(); await updateDoc(doc(db, "publicaciones", postId), act); } catch(err) {} 
             } 
         });
 
-        // 14. EVENTOS FINALES (ENTER, GUARDAR, BUSCAR)
+        // 18. EVENTOS FINALES (ENTER PARA COMENTAR, GUARDAR EDICIÓN, BUSCAR)
         document.getElementById("feed").addEventListener("keypress", async (e) => { 
-            if (e.key === "Enter" && e.target.classList.contains("input-comentario")) { 
-                const postId = e.target.id.replace("input-comentario-", ""); 
-                const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); 
-                if(btnEnviar) btnEnviar.click(); 
-            } 
+            if (e.key === "Enter" && e.target.classList.contains("input-comentario")) { const postId = e.target.id.replace("input-comentario-", ""); const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); if(btnEnviar) btnEnviar.click(); } 
         });
 
-        document.getElementById("btn-cancelar-edicion").addEventListener("click", () => {
-            document.getElementById("modal-editar").style.display = "none";
-        });
+        document.getElementById("btn-cancelar-edicion").addEventListener("click", () => document.getElementById("modal-editar").style.display = "none");
 
         document.getElementById("btn-guardar-edicion").addEventListener("click", async () => { 
-            const postId = document.getElementById("id-post-editar").value; 
-            const nuevoTextoCrudo = document.getElementById("texto-editar").value.trim(); 
-            const btnGuardar = document.getElementById("btn-guardar-edicion"); 
-            btnGuardar.disabled = true; 
-            btnGuardar.innerText = "Guardando cifrado..."; 
-            
-            const textoEditadoSeguro = encriptar(nuevoTextoCrudo); 
-            try { 
-                await updateDoc(doc(db, "publicaciones", postId), { texto: textoEditadoSeguro }); 
-                document.getElementById("modal-editar").style.display = "none"; 
-            } catch (err) { 
-                alert("Error al editar."); 
-            } finally { 
-                btnGuardar.disabled = false; 
-                btnGuardar.innerText = "Guardar Cambios"; 
-            } 
+            const postId = document.getElementById("id-post-editar").value; const nuevoTextoCrudo = document.getElementById("texto-editar").value.trim(); const btnGuardar = document.getElementById("btn-guardar-edicion"); 
+            btnGuardar.disabled = true; btnGuardar.innerText = "Guardando..."; const textoEditadoSeguro = encriptar(nuevoTextoCrudo); 
+            try { await updateDoc(doc(db, "publicaciones", postId), { texto: textoEditadoSeguro }); document.getElementById("modal-editar").style.display = "none"; } catch (err) {} finally { btnGuardar.disabled = false; btnGuardar.innerText = "Guardar Cambios"; } 
         });
 
         document.getElementById("buscador-muro").addEventListener("input", (e) => { 
-            const textoBuscado = e.target.value.toLowerCase(); 
-            const todasLasNotas = document.querySelectorAll(".post"); 
-            let notasVisibles = 0; 
-            
-            todasLasNotas.forEach(nota => { 
-                const contenidoNota = nota.textContent.toLowerCase(); 
-                if (contenidoNota.includes(textoBuscado)) { 
-                    nota.style.display = "block"; 
-                    notasVisibles++; 
-                } else { 
-                    nota.style.display = "none"; 
-                } 
-            }); 
-            
+            const textoBuscado = e.target.value.toLowerCase(); const todasLasNotas = document.querySelectorAll(".post"); let notasVisibles = 0; 
+            todasLasNotas.forEach(nota => { if (nota.textContent.toLowerCase().includes(textoBuscado)) { nota.style.display = "block"; notasVisibles++; } else { nota.style.display = "none"; } }); 
             document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none"; 
         });
 
     </script>
 </body>
 </html>
-
-
-
-    
