@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wueychat - Muro Premium (3D por Enlace & Escuadras)</title>
+    <title>Wueychat - Muro Premium (3D Nativo & Escuadras)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
@@ -219,9 +219,9 @@
 
         <div class="contenedor-publicacion">
             <div class="insignia-seguridad">🔒 Encriptación AES Activada</div>
-            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente? (Si pegas un link .glb se hará 3D automáticamente)"></textarea>
+            <textarea id="texto-publicacion" rows="3" placeholder="¿Qué tienes en mente? Usa +rojo, +azul o #hashtags"></textarea>
             <div class="acciones-publicar">
-                <input type="file" id="archivo-publicacion" accept="image/*,video/*">
+                <input type="file" id="archivo-publicacion" accept="image/*,video/*,.glb,.gltf">
                 <button id="btn-abrir-escuadra" class="btn-escuadra">🎮 Armar Escuadra</button>
                 <button id="btn-publicar" class="btn-publicar">Publicar Seguro</button>
             </div>
@@ -248,6 +248,8 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         
         const IMGBB_API_KEY = "f1ec2e833cbb9f022415d2fa76f8740f"; const CLOUDINARY_CLOUD_NAME = "dizktanb9"; 
+        
+        // Regresamos a tu Cloudinary Preset. Ojo: debe ser Unsigned y permitir archivos raw en Cloudinary.
         const CLOUDINARY_UPLOAD_PRESET = "wueychat_media"; 
 
         let usuarioActual = null; let llaveUsuarioActual = "anonimo"; let diccionarioHistorias = {}; let timeoutVisor = null; let autorViendo = null;
@@ -286,7 +288,7 @@
         document.getElementById("btn-cancelar-escuadra").addEventListener("click", () => document.getElementById("modal-escuadra").style.display = "none");
         document.getElementById("btn-publicar-escuadra").addEventListener("click", async () => { const juego = document.getElementById("juego-escuadra").value.trim(); const cupos = parseInt(document.getElementById("cupos-escuadra").value); const textoCrudo = document.getElementById("texto-escuadra").value.trim(); if(!juego || !cupos || !textoCrudo) { alert("Llena todos los campos."); return; } if(cupos < 1 || cupos > 10) { alert("Cupos: 1 a 10."); return; } const btn = document.getElementById("btn-publicar-escuadra"); btn.disabled = true; btn.innerText = "Reclutando... ⏳"; const textoSeguro = encriptar(textoCrudo); try { await addDoc(collection(db, "publicaciones"), { tipo: "escuadra", juego: juego, cuposTotales: cupos, participantes: {}, autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: null, mediaType: null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] }); document.getElementById("juego-escuadra").value = ""; document.getElementById("cupos-escuadra").value = ""; document.getElementById("texto-escuadra").value = ""; document.getElementById("modal-escuadra").style.display = "none"; } catch (error) { console.error(error); alert("Error."); } finally { btn.disabled = false; btn.innerText = "Reclutar 🚀"; } });
 
-        // PUBLICAR NORMAL (Solo Fotos y Videos cortos, el 3D va por enlace)
+        // --- PUBLICAR NORMAL Y 3D (Subida Nativa con Cloudinary) ---
         const btnPublicar = document.getElementById("btn-publicar");
         btnPublicar.addEventListener("click", async () => {
             const textoCrudo = document.getElementById("texto-publicacion").value.trim(); 
@@ -294,13 +296,39 @@
             const msgPublicando = document.getElementById("mensaje-publicando");
             
             if (textoCrudo === "" && !archivoMedia) return;
-            btnPublicar.disabled = true; msgPublicando.style.display = "block";
+            btnPublicar.disabled = true; 
+            msgPublicando.style.display = "block";
             let urlFinal = null; let tipoFinal = null; const textoSeguro = encriptar(textoCrudo);
             
             try {
                 if (archivoMedia) {
-                    if (archivoMedia.type.startsWith("image/")) { 
-                        msgPublicando.innerText = "Comprimiendo imagen... 🗜️"; archivoMedia = await comprimirImagen(archivoMedia); msgPublicando.innerText = "Subiendo cifrado... 🚀"; 
+                    const nombreArchivo = archivoMedia.name.toLowerCase();
+                    
+                    // ARCHIVOS 3D NATIVOS A CLOUDINARY
+                    if (nombreArchivo.endsWith('.glb') || nombreArchivo.endsWith('.gltf')) {
+                        msgPublicando.innerText = "Procesando modelo 3D... 🧊"; 
+                        
+                        const formData = new FormData(); 
+                        formData.append("file", archivoMedia); 
+                        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); 
+                        
+                        // Usamos /auto/upload para que Cloudinary detecte que es un archivo RAW (crudo)
+                        const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`; 
+                        
+                        const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
+                        const datos = await respuesta.json(); 
+                        
+                        if (datos.secure_url) { 
+                            urlFinal = datos.secure_url; 
+                            tipoFinal = "3d"; 
+                        } else { 
+                            throw new Error(datos.error ? datos.error.message : "Cloudinary rechazó el archivo 3D."); 
+                        } 
+                    }
+                    else if (archivoMedia.type.startsWith("image/")) { 
+                        msgPublicando.innerText = "Comprimiendo imagen... 🗜️"; 
+                        archivoMedia = await comprimirImagen(archivoMedia); 
+                        msgPublicando.innerText = "Subiendo cifrado... 🚀"; 
                         const formData = new FormData(); formData.append("image", archivoMedia); 
                         const respuestaImgbb = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
                         const datosImgbb = await respuestaImgbb.json(); 
@@ -312,7 +340,7 @@
                         const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; 
                         const respuesta = await fetch(urlCloudinary, { method: "POST", body: formData }); 
                         const datos = await respuesta.json(); 
-                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error("Error en Cloudinary"); 
+                        if (datos.secure_url) { urlFinal = datos.secure_url; tipoFinal = "video"; } else throw new Error(datos.error ? datos.error.message : "Cloudinary rechazó el video."); 
                     }
                 }
                 
@@ -320,60 +348,16 @@
                 await addDoc(collection(db, "publicaciones"), { tipo: "normal", autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", autorFoto: usuarioActual.photoURL || null, texto: textoSeguro, mediaUrl: urlFinal, mediaType: tipoFinal, imagenUrl: (tipoFinal === "image") ? urlFinal : null, fecha: serverTimestamp(), reacciones: {}, comentarios: [] });
                 document.getElementById("texto-publicacion").value = ""; document.getElementById("archivo-publicacion").value = "";
             } 
-            catch (error) { alert("🛑 ERROR AL SUBIR:\n" + error.message); } 
-            finally { btnPublicar.disabled = false; msgPublicando.style.display = "none"; msgPublicando.innerText = "Subiendo archivo... 🚀"; }
+            catch (error) { 
+                console.error(error); 
+                alert("🛑 EL SERVIDOR RECHAZÓ EL ARCHIVO:\n\n" + error.message + "\n\n(Asegúrate de que el modelo pese menos de 10MB y que el preset wueychat_media sea Unsigned y acepte Auto/Raw)"); 
+            } 
+            finally { 
+                btnPublicar.disabled = false; msgPublicando.style.display = "none"; msgPublicando.innerText = "Subiendo archivo... 🚀"; 
+            }
         });
 
-        function cargarPublicaciones() { 
-            const feedDiv = document.getElementById("feed"); const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc")); 
-            onSnapshot(q, (snapshot) => { 
-                feedDiv.innerHTML = ""; const textoBuscadoActual = document.getElementById("buscador-muro").value.toLowerCase(); 
-                snapshot.forEach((documentoFirebase) => { 
-                    try { 
-                        const post = documentoFirebase.data(); const postId = documentoFirebase.id; 
-                        if (post.fecha) { 
-                            const cajaPost = document.createElement("div"); cajaPost.classList.add("post"); 
-                            if(post.tipo === "escuadra") cajaPost.classList.add("escuadra"); 
-                            const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor; const fText = post.fecha.toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + post.fecha.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' }); 
-                            let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`; 
-                            let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`; 
-                            if(post.tipo === "escuadra" && post.juego) { htmlContenido += `<div class="insignia-juego">🎮 ${post.juego}</div>`; } 
-                            
-                            // EL MOTOR DE DETECCIÓN 3D 🧊
-                            let textoDesencriptado = desencriptar(post.texto); 
-                            let link3D_detectado = null;
-
-                            if (textoDesencriptado) { 
-                                // Buscamos si el texto contiene un enlace que termine en .glb o .gltf
-                                const regex3D = /(https?:\/\/[^\s]+?\.(?:glb|gltf))/i;
-                                const match = textoDesencriptado.match(regex3D);
-                                
-                                if(match) {
-                                    link3D_detectado = match[0];
-                                    // Borramos el link del texto para que no se vea feo
-                                    textoDesencriptado = textoDesencriptado.replace(link3D_detectado, "").trim();
-                                }
-                                htmlContenido += `<div class="post-texto">${formatearTexto(textoDesencriptado)}</div>`; 
-                            } 
-                            
-                            const urlArchivo = post.mediaUrl || post.imagenUrl; const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null); 
-                            
-                            // DIBUJAMOS EL 3D O LA MULTIMEDIA NORMAL
-                            if (link3D_detectado) {
-                                htmlContenido += `<model-viewer src="${link3D_detectado}" auto-rotate camera-controls shadow-intensity="1" class="post-3d"></model-viewer>`;
-                            }
-                            else if (urlArchivo && post.tipo !== "escuadra") { 
-                                if (tipoArchivo === "video") { htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`; } 
-                                else { htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`; } 
-                            } 
-
-                            // Resto del código (reacciones, comentarios, escuadras)
-                            if(post.tipo === "escuadra") { const participantes = post.participantes || {}; const listaLlaves = Object.keys(participantes); const totalUnidos = listaLlaves.length; const cupos = post.cuposTotales || 1; htmlContenido += `<div class="slots-contenedor">`; Object.values(participantes).forEach(p => { let ava = p.foto ? `<img src="${p.foto}">` : p.nombre.charAt(0).toUpperCase(); htmlContenido += `<div class="slot lleno" title="${p.nombre}">${ava}</div>`; }); for(let i = 0; i < (cupos - totalUnidos); i++) { htmlContenido += `<div class="slot vacio">+</div>`; } htmlContenido += `</div>`; if(post.autor !== usuarioActual.email) { if(participantes[llaveUsuarioActual]) { htmlContenido += `<button class="btn-salir-escuadra" data-id="${postId}">Abandonar Escuadra</button>`; } else if(totalUnidos >= cupos) { htmlContenido += `<button class="btn-lleno" disabled>Escuadra Llena</button>`; } else { htmlContenido += `<button class="btn-unirse" data-id="${postId}">¡Me Apunto! ⚔️</button>`; } } } const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null; for (const [correo, emoji] of Object.entries(reacciones)) { conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1; if (correo === llaveUsuarioActual) miReaccionActual = emoji; } const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   '); let textoRAW = desencriptar(post.texto) ? String(desencriptar(post.texto)).replace(/"/g, '&quot;') : ""; let botonesAutorHTML = post.autor === usuarioActual.email ? `<div class="seccion-derecha-botones"><button class="btn-editar" data-id="${postId}" data-raw="${textoRAW}">✏️</button><button class="btn-eliminar" data-id="${postId}">🗑️</button></div>` : ""; htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍" data-autor="${post.autor}">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️" data-autor="${post.autor}">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂" data-autor="${post.autor}">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮" data-autor="${post.autor}">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢" data-autor="${post.autor}">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonesAutorHTML}</div>`; let htmlComentarios = `<div class="seccion-comentarios">`; if (post.comentarios && post.comentarios.length > 0) { post.comentarios.forEach((comentario, index) => { let comentDesencriptado = desencriptar(comentario.texto); let puedeBorrarComentario = (comentario.autor === usuarioActual.email) || (post.autor === usuarioActual.email); let btnBorrarComentarioHTML = puedeBorrarComentario ? `<button class="btn-borrar-comentario" data-postid="${postId}" data-index="${index}">✖</button>` : ""; htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${formatearTexto(comentDesencriptado)} ${btnBorrarComentarioHTML}</div></div>`; }); } htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`; htmlContenido += htmlComentarios; cajaPost.innerHTML = htmlContenido; if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { cajaPost.style.display = "none"; } feedDiv.appendChild(cajaPost); 
-                        } 
-                    } catch (errorPost) { console.error("Saltando...", errorPost); } 
-                }); 
-            }); 
-        }
+        function cargarPublicaciones() { const feedDiv = document.getElementById("feed"); const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc")); onSnapshot(q, (snapshot) => { feedDiv.innerHTML = ""; const textoBuscadoActual = document.getElementById("buscador-muro").value.toLowerCase(); snapshot.forEach((documentoFirebase) => { try { const post = documentoFirebase.data(); const postId = documentoFirebase.id; if (post.fecha) { const cajaPost = document.createElement("div"); cajaPost.classList.add("post"); if(post.tipo === "escuadra") cajaPost.classList.add("escuadra"); const nombreMostrar = post.autorNombre ? post.autorNombre : post.autor; const fText = post.fecha.toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + post.fecha.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' }); let avatarHTML = post.autorFoto ? `<img src="${post.autorFoto}" class="post-avatar">` : `<div class="post-avatar">${nombreMostrar.charAt(0).toUpperCase()}</div>`; let htmlContenido = `<div class="post-cabecera">${avatarHTML}<div class="info-autor"><div class="post-autor"><a href="perfil_publico.html?usuario=${post.autor}">${nombreMostrar}</a></div><div class="post-fecha">${fText}</div></div></div>`; if(post.tipo === "escuadra" && post.juego) { htmlContenido += `<div class="insignia-juego">🎮 ${post.juego}</div>`; } let textoDesencriptado = desencriptar(post.texto); if (textoDesencriptado) { htmlContenido += `<div class="post-texto">${formatearTexto(textoDesencriptado)}</div>`; } const urlArchivo = post.mediaUrl || post.imagenUrl; const tipoArchivo = post.mediaType || (post.imagenUrl ? "image" : null); if (urlArchivo && post.tipo !== "escuadra") { if (tipoArchivo === "video") { htmlContenido += `<video src="${urlArchivo}" class="post-video" controls preload="metadata"></video>`; } else if (tipoArchivo === "3d") { htmlContenido += `<model-viewer src="${urlArchivo}" auto-rotate camera-controls shadow-intensity="1" class="post-3d"></model-viewer>`; } else { htmlContenido += `<img src="${urlArchivo}" class="post-imagen">`; } } if(post.tipo === "escuadra") { const participantes = post.participantes || {}; const listaLlaves = Object.keys(participantes); const totalUnidos = listaLlaves.length; const cupos = post.cuposTotales || 1; htmlContenido += `<div class="slots-contenedor">`; Object.values(participantes).forEach(p => { let ava = p.foto ? `<img src="${p.foto}">` : p.nombre.charAt(0).toUpperCase(); htmlContenido += `<div class="slot lleno" title="${p.nombre}">${ava}</div>`; }); for(let i = 0; i < (cupos - totalUnidos); i++) { htmlContenido += `<div class="slot vacio">+</div>`; } htmlContenido += `</div>`; if(post.autor !== usuarioActual.email) { if(participantes[llaveUsuarioActual]) { htmlContenido += `<button class="btn-salir-escuadra" data-id="${postId}">Abandonar Escuadra</button>`; } else if(totalUnidos >= cupos) { htmlContenido += `<button class="btn-lleno" disabled>Escuadra Llena</button>`; } else { htmlContenido += `<button class="btn-unirse" data-id="${postId}">¡Me Apunto! ⚔️</button>`; } } } const reacciones = post.reacciones || {}; const conteoEmojis = {}; let miReaccionActual = null; for (const [correo, emoji] of Object.entries(reacciones)) { conteoEmojis[emoji] = (conteoEmojis[emoji] || 0) + 1; if (correo === llaveUsuarioActual) miReaccionActual = emoji; } const textoReacciones = Object.entries(conteoEmojis).map(([e, total]) => `${e} ${total}`).join('   '); let textoRAW = textoDesencriptado ? String(textoDesencriptado).replace(/"/g, '&quot;') : ""; let botonesAutorHTML = post.autor === usuarioActual.email ? `<div class="seccion-derecha-botones"><button class="btn-editar" data-id="${postId}" data-raw="${textoRAW}">✏️</button><button class="btn-eliminar" data-id="${postId}">🗑️</button></div>` : ""; htmlContenido += `<div class="contenedor-reacciones"><div class="seccion-izquierda"><button class="btn-reaccionar-premium">${miReaccionActual ? miReaccionActual : '👍'}</button><div class="menu-emojis"><span class="emoji" data-id="${postId}" data-emoji="👍" data-autor="${post.autor}">👍</span><span class="emoji" data-id="${postId}" data-emoji="❤️" data-autor="${post.autor}">❤️</span><span class="emoji" data-id="${postId}" data-emoji="😂" data-autor="${post.autor}">😂</span><span class="emoji" data-id="${postId}" data-emoji="😮" data-autor="${post.autor}">😮</span><span class="emoji" data-id="${postId}" data-emoji="😢" data-autor="${post.autor}">😢</span></div>${textoReacciones ? `<div class="lista-reacciones">${textoReacciones}</div>` : ''}</div>${botonesAutorHTML}</div>`; let htmlComentarios = `<div class="seccion-comentarios">`; if (post.comentarios && post.comentarios.length > 0) { post.comentarios.forEach((comentario, index) => { let comentDesencriptado = desencriptar(comentario.texto); let puedeBorrarComentario = (comentario.autor === usuarioActual.email) || (post.autor === usuarioActual.email); let btnBorrarComentarioHTML = puedeBorrarComentario ? `<button class="btn-borrar-comentario" data-postid="${postId}" data-index="${index}">✖</button>` : ""; htmlComentarios += `<div style="margin-bottom: 5px;"><div class="comentario"><strong><a href="perfil_publico.html?usuario=${comentario.autor}" style="color: inherit; text-decoration: none;">${comentario.autorNombre}</a>:</strong> ${formatearTexto(comentDesencriptado)} ${btnBorrarComentarioHTML}</div></div>`; }); } htmlComentarios += `<div class="caja-escribir-comentario"><input type="text" class="input-comentario" id="input-comentario-${postId}" placeholder="Escribe un comentario..."><button class="btn-enviar-comentario" data-id="${postId}" data-autor="${post.autor}">➤</button></div></div>`; htmlContenido += htmlComentarios; cajaPost.innerHTML = htmlContenido; if (textoBuscadoActual !== "" && !cajaPost.textContent.toLowerCase().includes(textoBuscadoActual)) { cajaPost.style.display = "none"; } feedDiv.appendChild(cajaPost); } } catch (errorPost) { console.error("Saltando...", errorPost); } }); }); }
 
         document.getElementById("feed").addEventListener("click", async (e) => { if (e.target.classList.contains("emoji")) { const postId = e.target.getAttribute("data-id"); const emojiElegido = e.target.getAttribute("data-emoji"); const autorDelPost = e.target.getAttribute("data-autor"); const ref = doc(db, "publicaciones", postId); const act = {}; act[`reacciones.${llaveUsuarioActual}`] = emojiElegido; try { await updateDoc(ref, act); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "reaccion", emoji: emojiElegido, leida: false, fecha: serverTimestamp() }); } } catch (err) { } } if (e.target.classList.contains("btn-eliminar") || e.target.closest('.btn-eliminar')) { const btn = e.target.classList.contains("btn-eliminar") ? e.target : e.target.closest('.btn-eliminar'); const postId = btn.getAttribute("data-id"); if (confirm("¿Borrar nota para siempre?")) { try { await deleteDoc(doc(db, "publicaciones", postId)); } catch (err) { } } } if (e.target.classList.contains("btn-editar") || e.target.closest('.btn-editar')) { const btn = e.target.classList.contains("btn-editar") ? e.target : e.target.closest('.btn-editar'); const postId = btn.getAttribute("data-id"); const textoRAW = btn.getAttribute("data-raw"); document.getElementById("id-post-editar").value = postId; document.getElementById("texto-editar").value = textoRAW; document.getElementById("modal-editar").style.display = "flex"; } if (e.target.classList.contains("btn-borrar-comentario")) { const postId = e.target.getAttribute("data-postid"); const index = e.target.getAttribute("data-index"); if (confirm("¿Eliminar este comentario?")) { try { const docRef = doc(db, "publicaciones", postId); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const post = docSnap.data(); const comentarioAEliminar = post.comentarios[index]; await updateDoc(docRef, { comentarios: arrayRemove(comentarioAEliminar) }); } } catch (err) {} } } if (e.target.classList.contains("btn-enviar-comentario")) { const postId = e.target.getAttribute("data-id"); const autorDelPost = e.target.getAttribute("data-autor"); const inputElemento = document.getElementById(`input-comentario-${postId}`); const textoComentario = inputElemento.value.trim(); if (textoComentario !== "") { e.target.disabled = true; const comentSeguro = encriptar(textoComentario); try { const ref = doc(db, "publicaciones", postId); const nuevoComentario = { autor: usuarioActual.email, autorNombre: usuarioActual.displayName || "Usuario", texto: comentSeguro }; await updateDoc(ref, { comentarios: arrayUnion(nuevoComentario) }); if (autorDelPost !== usuarioActual.email) { await addDoc(collection(db, "notificaciones"), { para: autorDelPost, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "comentario", leida: false, fecha: serverTimestamp() }); } inputElemento.value = ""; } catch (err) { alert("Error al comentar."); } finally { e.target.disabled = false; } } } if (e.target.classList.contains("btn-unirse")) { const postId = e.target.getAttribute("data-id"); try { const ref = doc(db, "publicaciones", postId); const act = {}; act[`participantes.${llaveUsuarioActual}`] = { nombre: usuarioActual.displayName || "Usuario", foto: usuarioActual.photoURL || null }; await updateDoc(ref, act); const docSnap = await getDoc(ref); if(docSnap.exists()) { const post = docSnap.data(); await addDoc(collection(db, "notificaciones"), { para: post.autor, de: usuarioActual.email, deNombre: usuarioActual.displayName || "Alguien", tipo: "escuadra", leida: false, fecha: serverTimestamp() }); } } catch(err) { console.error(err); } } if (e.target.classList.contains("btn-salir-escuadra")) { const postId = e.target.getAttribute("data-id"); try { const ref = doc(db, "publicaciones", postId); const act = {}; act[`participantes.${llaveUsuarioActual}`] = deleteField(); await updateDoc(ref, act); } catch(err) { console.error(err); } } }); document.getElementById("feed").addEventListener("keypress", async (e) => { if (e.key === "Enter" && e.target.classList.contains("input-comentario")) { const postId = e.target.id.replace("input-comentario-", ""); const btnEnviar = document.querySelector(`.btn-enviar-comentario[data-id="${postId}"]`); if(btnEnviar) btnEnviar.click(); } }); document.getElementById("btn-cancelar-edicion").addEventListener("click", () => document.getElementById("modal-editar").style.display = "none"); document.getElementById("btn-guardar-edicion").addEventListener("click", async () => { const postId = document.getElementById("id-post-editar").value; const nuevoTextoCrudo = document.getElementById("texto-editar").value.trim(); const btnGuardar = document.getElementById("btn-guardar-edicion"); btnGuardar.disabled = true; btnGuardar.innerText = "Guardando cifrado..."; const textoEditadoSeguro = encriptar(nuevoTextoCrudo); try { await updateDoc(doc(db, "publicaciones", postId), { texto: textoEditadoSeguro }); document.getElementById("modal-editar").style.display = "none"; } catch (err) { alert("Error al editar."); } finally { btnGuardar.disabled = false; btnGuardar.innerText = "Guardar Cambios"; } }); document.getElementById("buscador-muro").addEventListener("input", (e) => { const textoBuscado = e.target.value.toLowerCase(); const todasLasNotas = document.querySelectorAll(".post"); let notasVisibles = 0; todasLasNotas.forEach(nota => { const contenidoNota = nota.textContent.toLowerCase(); if (contenidoNota.includes(textoBuscado)) { nota.style.display = "block"; notasVisibles++; } else { nota.style.display = "none"; } }); document.getElementById("mensaje-no-resultados").style.display = (notasVisibles === 0 && textoBuscado !== "") ? "block" : "none"; });
     </script>
